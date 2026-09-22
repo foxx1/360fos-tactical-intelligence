@@ -1,0 +1,17 @@
+{
+  "name": "360fos-tactical-intelligence",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:web": "npm --workspace apps/web run dev",
+    "dev:api": "npm --workspace apps/api run start:dev",
+    "build": "npm run build:web && npm run build:api",
+    "build:web": "npm --workspace apps/web run build",
+    "build:api": "npm --workspace apps/api run build",
+    "lint": "npm run lint:web && npm run lint:api",
+    "lint:web": "npm --workspace apps/web run lint",
+    "lint:api": "npm --workspace apps/api run lint"
+  },
+  "engines": { "node": ">=20" }
+}
