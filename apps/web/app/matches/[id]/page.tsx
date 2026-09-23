@@ -45,7 +45,7 @@ export default function MatchWorkspacePage() {
           <div className="team-mark">{match.team.name.slice(0,1)}</div><div><h1>{match.team.name} <em>vs</em> {match.opponent.name}</h1><p>{match.competition?.name ?? "Competition"} · {match.season?.name ?? "Season"} · {new Date(match.matchDate).toLocaleDateString()} · {match.venue ?? "Venue not set"}</p></div>
           <div className="score-block"><span className="pill green">{match.status}</span><strong>{match.ourScore ?? "—"} : {match.opponentScore ?? "—"}</strong><small>{match.formation ?? "Formation not set"} · {match.isHome ? "Home" : "Away"}</small></div>
         </section>
-        <div className="workspace-tabs">{tabs.map(([label,key],i)=><button className={i===0?"active":""} key={key}>{label}</button>)}</div>
+        <div className="workspace-tabs">{tabs.map(([label,key],i)=>key==="evidence" ? <Link className="workspace-tab-link" href={"/matches/"+params.id+"/evidence"} key={key}>{label}</Link> : <button className={i===0?"active":""} key={key}>{label}</button>)}</div>
 
         <section className="metric-grid">
           <Metric label="Evidence" value={match._count.evidence} sub="Tagged match moments" icon="◈"/>
