@@ -1,18 +1,27 @@
-export default function HomePage() {
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function HomePage() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) redirect("/login");
+
   return (
-    <main style={{ minHeight: "100vh", padding: "48px" }}>
-      <section style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <p style={{ opacity: 0.65, marginBottom: 8 }}>360FOS</p>
-        <h1 style={{ fontSize: 42, margin: "0 0 16px" }}>
-          Tactical Intelligence
-        </h1>
-        <p style={{ maxWidth: 720, lineHeight: 1.7, opacity: 0.8 }}>
-          Match → Analysis → Evidence → Strengths & Weaknesses → Gap Analysis →
-          Training Priority → Match Plan → Post-Match Validation.
-        </p>
-        <div style={{ marginTop: 32, padding: 24, border: "1px solid #26304a", borderRadius: 16 }}>
-          MVP foundation is ready. The first vertical slice will start with Match and Opponent Intelligence.
-        </div>
+    <main className="app-shell">
+      <header className="topbar">
+        <div><div className="eyebrow">360FOS</div><h1>Tactical Intelligence</h1></div>
+        <form action="/auth/signout" method="post"><button className="ghost-button">Sign out</button></form>
+      </header>
+      <section className="hero">
+        <span className="status">MVP FOUNDATION</span>
+        <h2>From match evidence to training decisions.</h2>
+        <p>Your tactical workspace is ready for the first vertical slice: Match → Analysis → Evidence → Strengths & Weaknesses → Gap Analysis → Training Priority.</p>
+      </section>
+      <section className="dashboard-grid">
+        <article><span>01</span><h3>Matches</h3><p>Create and manage the tactical workspace for each match.</p></article>
+        <article><span>02</span><h3>Evidence</h3><p>Capture minute, phase, zone and video references.</p></article>
+        <article><span>03</span><h3>Intelligence</h3><p>Turn observations into strengths, weaknesses and tactical gaps.</p></article>
+        <article><span>04</span><h3>Training</h3><p>Convert diagnosed problems into measurable training priorities.</p></article>
       </section>
     </main>
   );
