@@ -1,27 +1,64 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+"use client";
 
-export default async function HomePage() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (!data?.claims) redirect("/login");
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+type Workspace = {
+  name: string;
+  teams: { id: string; name: string; seasons: { id: string; name: string }[] }[];
+  opponents: { id: string; name: string }[];
+};
+
+export default function HomePage() {
+  const router = useRouter();
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.replace("/login"); return; }
+      setEmail(session.user.email ?? "");
+
+      const response = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1") + "/organizations/me",
+        { headers: { Authorization: "Bearer " + session.access_token } }
+      );
+      const result = await response.json();
+      if (!result.data) router.replace("/onboarding");
+      else setWorkspace(result.data);
+      setLoading(false);
+    }
+    load();
+  }, [router]);
+
+  async function signOut() {
+    await createClient().auth.signOut();
+    router.replace("/login");
+  }
+
+  if (loading) return <main className="app-shell"><p>Loading Tactical Intelligence...</p></main>;
+  if (!workspace) return null;
 
   return (
     <main className="app-shell">
       <header className="topbar">
         <div><div className="eyebrow">360FOS</div><h1>Tactical Intelligence</h1></div>
-        <form action="/auth/signout" method="post"><button className="ghost-button">Sign out</button></form>
+        <div className="topbar-actions"><span>{email}</span><button className="ghost-button" onClick={signOut}>Sign out</button></div>
       </header>
       <section className="hero">
-        <span className="status">MVP FOUNDATION</span>
-        <h2>From match evidence to training decisions.</h2>
-        <p>Your tactical workspace is ready for the first vertical slice: Match → Analysis → Evidence → Strengths & Weaknesses → Gap Analysis → Training Priority.</p>
+        <span className="status">WORKSPACE READY</span>
+        <h2>{workspace.name}</h2>
+        <p>Prepare matches by connecting our team intelligence, opponent intelligence, tactical gaps and training priorities.</p>
       </section>
       <section className="dashboard-grid">
-        <article><span>01</span><h3>Matches</h3><p>Create and manage the tactical workspace for each match.</p></article>
-        <article><span>02</span><h3>Evidence</h3><p>Capture minute, phase, zone and video references.</p></article>
-        <article><span>03</span><h3>Intelligence</h3><p>Turn observations into strengths, weaknesses and tactical gaps.</p></article>
-        <article><span>04</span><h3>Training</h3><p>Convert diagnosed problems into measurable training priorities.</p></article>
+        <article><span>TEAM</span><h3>{workspace.teams[0]?.name ?? "No team"}</h3><p>{workspace.teams[0]?.seasons.length ?? 0} season(s) configured.</p></article>
+        <article><span>OPPONENTS</span><h3>{workspace.opponents.length}</h3><p>Opponent profiles available for match preparation.</p></article>
+        <article><span>INTELLIGENCE</span><h3>Our Team + Opponent</h3><p>Build evidence-based strengths, weaknesses and tactical gaps.</p></article>
+        <article><span>TRAINING</span><h3>Decision Loop</h3><p>Convert tactical diagnosis into training objectives and match behaviours.</p></article>
       </section>
     </main>
   );
