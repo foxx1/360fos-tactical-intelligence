@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Req } from "@nestjs/common";
 import { CreateGapDto } from "./dto/create-gap.dto";
 import { IntelligenceService } from "./intelligence.service";
 
@@ -19,6 +19,11 @@ export class IntelligenceController {
   @Get("gaps")
   findGaps(@Param("matchId") matchId: string) {
     return { success: true, data: this.service.findGaps(matchId) };
+  }
+
+  @Post("generate")
+  generate(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: this.service.generateFromEvidence(req.user.id, matchId) };
   }
 
   @Post("gaps")
