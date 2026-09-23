@@ -15,8 +15,9 @@ button, input { font: inherit; }
 .auth-card button:disabled { opacity: .55; cursor: wait; }
 .auth-message { margin-top: 18px; padding: 12px; border-radius: 10px; background: #151f34; color: #b9c6d8; font-size: 13px; line-height: 1.5; }
 .app-shell { min-height: 100vh; max-width: 1280px; margin: 0 auto; padding: 32px; }
-.topbar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #202b40; padding-bottom: 24px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #202b40; padding-bottom: 24px; gap: 20px; }
 .topbar h1 { margin: 6px 0 0; font-size: 24px; }
+.topbar-actions { display: flex; align-items: center; gap: 14px; color: #71809a; font-size: 12px; }
 .ghost-button { background: transparent; color: #c6d0df; border: 1px solid #33415d; border-radius: 9px; padding: 9px 13px; cursor: pointer; }
 .hero { margin-top: 48px; max-width: 800px; }
 .status { display: inline-block; padding: 6px 9px; border: 1px solid #33415d; border-radius: 999px; font-size: 11px; letter-spacing: .12em; color: #9fb0c9; }
@@ -28,4 +29,4 @@ button, input { font: inherit; }
 .dashboard-grid h3 { margin: 28px 0 8px; font-size: 20px; }
 .dashboard-grid p { color: #8f9db1; line-height: 1.6; font-size: 13px; }
 @media (max-width: 900px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .app-shell { padding: 20px; } .dashboard-grid { grid-template-columns: 1fr; } .auth-card { padding: 28px; } }
+@media (max-width: 560px) { .app-shell { padding: 20px; } .dashboard-grid { grid-template-columns: 1fr; } .auth-card { padding: 28px; } .topbar { align-items: flex-start; } .topbar-actions span { display: none; } }
