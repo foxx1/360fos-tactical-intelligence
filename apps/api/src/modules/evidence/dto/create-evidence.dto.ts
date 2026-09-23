@@ -1,7 +1,8 @@
-import { TacticalPhase } from "@prisma/client";
+import { AnalysisType, TacticalPhase } from "@prisma/client";
 import { IsEnum, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class CreateEvidenceDto {
+  @IsEnum(AnalysisType) analysisType!: AnalysisType;
   @IsNumber() @Min(0) minute!: number;
   @IsEnum(TacticalPhase) phase!: TacticalPhase;
   @IsString() event!: string;
