@@ -54,7 +54,7 @@ export default function HomePage() {
         <h2>{workspace.name}</h2>
         <p>Prepare matches by connecting our team intelligence, opponent intelligence, tactical gaps and training priorities.</p>
       </section>
-      <section className="dashboard-grid">
+      <div style={{marginTop:24}}><a className="primary-action" href="/matches">Open Match Workspace →</a></div><section className="dashboard-grid">
         <article><span>TEAM</span><h3>{workspace.teams[0]?.name ?? "No team"}</h3><p>{workspace.teams[0]?.seasons.length ?? 0} season(s) configured.</p></article>
         <article><span>OPPONENTS</span><h3>{workspace.opponents.length}</h3><p>Opponent profiles available for match preparation.</p></article>
         <article><span>INTELLIGENCE</span><h3>Our Team + Opponent</h3><p>Build evidence-based strengths, weaknesses and tactical gaps.</p></article>
