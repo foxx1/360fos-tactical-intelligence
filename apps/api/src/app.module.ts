@@ -10,8 +10,22 @@ import { TrainingModule } from './modules/training/training.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { OpponentsModule } from './modules/opponents/opponents.module';
+import { CompetitionsModule } from './modules/competitions/competitions.module';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, HealthModule, OrganizationsModule, TeamsModule, OpponentsModule, MatchesModule, AnalysisModule, EvidenceModule, IntelligenceModule, TrainingModule]
+  imports: [
+    DatabaseModule,
+    AuthModule,
+    HealthModule,
+    OrganizationsModule,
+    TeamsModule,
+    OpponentsModule,
+    CompetitionsModule,
+    MatchesModule,
+    AnalysisModule,
+    EvidenceModule,
+    IntelligenceModule,
+    TrainingModule,
+  ],
 })
 export class AppModule {}
