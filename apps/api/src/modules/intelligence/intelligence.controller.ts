@@ -11,6 +11,11 @@ export class IntelligenceController {
     return { success: true, data: this.service.summarize(matchId) };
   }
 
+  @Get("strengths-weaknesses")
+  strengthsWeaknesses(@Param("matchId") matchId: string) {
+    return { success: true, data: this.service.strengthsWeaknesses(matchId) };
+  }
+
   @Get("gaps")
   findGaps(@Param("matchId") matchId: string) {
     return { success: true, data: this.service.findGaps(matchId) };
