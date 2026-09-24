@@ -1,7 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { createClient } from '@supabase/supabase-js';
-import WebSocket from 'ws';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 @Injectable()
@@ -9,11 +8,6 @@ export class AuthGuard implements CanActivate {
   private readonly supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_PUBLISHABLE_KEY!,
-    {
-      realtime: {
-        transport: WebSocket as any,
-      },
-    },
   );
 
   constructor(private readonly reflector: Reflector) {}
