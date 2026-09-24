@@ -53,7 +53,7 @@ export class TrainingService {
       const teamBehaviour = gap.teamBehaviour ?? (isOpportunity ? "Create the conditions to isolate the target area and attack with support." : "Protect the vulnerable space with coordinated pressure, cover and balance.");
       const constraint = isOpportunity ? "Reward the attacking team only when the target weakness is attacked within 5 seconds of recognition." : "Restart if the defensive unit fails to provide pressure, cover or balance within 5 seconds.";
       const successKpi = isOpportunity ? "Target behaviour appears in at least 70% of representative repetitions with successful penetration or final action." : "Defensive unit prevents the target progression in at least 70% of representative repetitions.";
-      const priorityRecord = await this.prisma.trainingPriority.create({
+      created.push(await this.prisma.trainingPriority.create({
         data: {
           matchId, rank: created.length + 1, priority: gap.priority,
           problem: isOpportunity ? "Exploit: " + (gap.opponentWeakness ?? gap.interaction) : "Protect: " + (gap.opponentStrength ?? gap.interaction),
@@ -65,8 +65,7 @@ export class TrainingService {
           matchObjective: gap.matchObjective ?? (isOpportunity ? "Reproduce the attacking behaviour in the match when the opponent weakness appears." : "Prevent the opponent strength from producing the target progression in the match."),
           sessionDay: "MD-3",
         },
-      });
-      created.push(priorityRecord);
+      }));
     }
     return { generated: created.length, message: created.length ? "Approved tactical gaps converted into draft training priorities." : "Training priorities are already generated for the approved tactical gaps.", priorities: created };
   }
