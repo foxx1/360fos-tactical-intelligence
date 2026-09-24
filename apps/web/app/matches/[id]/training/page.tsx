@@ -93,7 +93,7 @@ export default function TrainingPlannerPage() {
             <p>Convert approved match intelligence into game-based exercises, constraints, KPIs and observable match behaviours.</p>
           </div>
           <div className="heading-actions">
-            <Link className="secondary-action" href={"/matches/" + params.id + "/intelligence"}>← Intelligence Matrix</Link>
+            <Link className="secondary-action" href={"/matches/" + params.id + "/intelligence"}>← Intelligence Matrix</Link>\n            <Link className="secondary-action" href={"/matches/" + params.id + "/training/session"}>Session Builder →</Link>
             <button className="primary-action" onClick={generate} disabled={generating}>{generating ? "Generating..." : "Generate Training Plan ✦"}</button>
           </div>
         </section>
