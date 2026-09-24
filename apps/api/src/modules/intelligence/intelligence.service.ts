@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../database/prisma.service";
 import { CreateGapDto } from "./dto/create-gap.dto";
+import { UpdateGapDto } from "./dto/update-gap.dto";
 
 @Injectable()
 export class IntelligenceService {
@@ -14,43 +15,76 @@ export class IntelligenceService {
     if (!match) throw new NotFoundException("Match not found");
   }
 
-  createGap(matchId: string, dto: CreateGapDto) {
+  private async assertGapAccess(userId: string, matchId: string, gapId: string) {
+    const gap = await this.prisma.tacticalGap.findFirst({
+      where: {
+        id: gapId,
+        matchId,
+        match: { team: { organization: { users: { some: { userId } } } } },
+      },
+      select: { id: true },
+    });
+    if (!gap) throw new NotFoundException("Tactical gap not found");
+  }
+
+  async createGap(userId: string, matchId: string, dto: CreateGapDto) {
+    await this.assertMatchAccess(userId, matchId);
     return this.prisma.tacticalGap.create({ data: { matchId, ...dto } });
   }
 
-  findGaps(matchId: string) {
+  async updateGap(userId: string, matchId: string, gapId: string, dto: UpdateGapDto) {
+    await this.assertGapAccess(userId, matchId, gapId);
+    return this.prisma.tacticalGap.update({
+      where: { id: gapId },
+      data: dto,
+    });
+  }
+
+  async findGaps(userId: string, matchId: string) {
+    await this.assertMatchAccess(userId, matchId);
     return this.prisma.tacticalGap.findMany({
       where: { matchId },
       orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
     });
   }
 
-  async strengthsWeaknesses(matchId: string) {
+  private findingScore(item: any) {
+    const success = item.successPct ?? 50;
+    const impact = item.impact ?? 3;
+    const frequency = item.frequency ?? 1;
+    return Number((frequency * impact * (item.findingType === "STRENGTH"
+      ? success / 100
+      : (100 - success) / 100)).toFixed(2));
+  }
+
+  async strengthsWeaknesses(userId: string, matchId: string) {
+    await this.assertMatchAccess(userId, matchId);
     const analyses = await this.prisma.analysis.findMany({
       where: { matchId, findingType: { not: null } },
       orderBy: { createdAt: "desc" },
     });
-    const findings = analyses.map((item) => {
-      const success = item.successPct ?? 50;
-      const impact = item.impact ?? 3;
-      const frequency = item.frequency ?? 1;
-      const score = item.findingType === "STRENGTH"
-        ? frequency * impact * (success / 100)
-        : frequency * impact * ((100 - success) / 100);
-      return {
-        id: item.id, type: item.findingType, analysisType: item.type, phase: item.phase,
-        subPhase: item.subPhase, behaviour: item.behaviour, frequency,
-        successPct: item.successPct, impact, score: Number(score.toFixed(2)),
-        priority: item.priority, videoRef: item.videoRef,
-      };
-    });
+    const findings = analyses.map((item) => ({
+      id: item.id,
+      type: item.findingType,
+      analysisType: item.type,
+      phase: item.phase,
+      subPhase: item.subPhase,
+      behaviour: item.behaviour,
+      frequency: item.frequency,
+      successPct: item.successPct,
+      impact: item.impact ?? 3,
+      score: this.findingScore(item),
+      priority: item.priority,
+      videoRef: item.videoRef,
+    }));
     return {
       strengths: findings.filter((item) => item.type === "STRENGTH").sort((a, b) => b.score - a.score),
       weaknesses: findings.filter((item) => item.type === "WEAKNESS").sort((a, b) => b.score - a.score),
     };
   }
 
-  async summarize(matchId: string) {
+  async summarize(userId: string, matchId: string) {
+    await this.assertMatchAccess(userId, matchId);
     const [analyses, evidence, gaps, priorities] = await Promise.all([
       this.prisma.analysis.count({ where: { matchId } }),
       this.prisma.evidence.count({ where: { matchId } }),
@@ -58,6 +92,97 @@ export class IntelligenceService {
       this.prisma.trainingPriority.count({ where: { matchId } }),
     ]);
     return { analysisItems: analyses, evidenceItems: evidence, tacticalGaps: gaps, trainingPriorities: priorities };
+  }
+
+  async matrix(userId: string, matchId: string) {
+    await this.assertMatchAccess(userId, matchId);
+    const [analyses, gaps] = await Promise.all([
+      this.prisma.analysis.findMany({
+        where: { matchId, findingType: { not: null } },
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.tacticalGap.findMany({
+        where: { matchId },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const scored = analyses.map((item) => ({
+      id: item.id,
+      type: item.type,
+      findingType: item.findingType,
+      behaviour: item.behaviour,
+      phase: item.phase,
+      impact: item.impact ?? 3,
+      frequency: item.frequency ?? 1,
+      score: this.findingScore(item),
+      priority: item.priority,
+    }));
+
+    const top = (type: "OUR_TEAM" | "OPPONENT", findingType: "STRENGTH" | "WEAKNESS") =>
+      scored.filter((x) => x.type === type && x.findingType === findingType)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+
+    const ourStrengths = top("OUR_TEAM", "STRENGTH");
+    const ourWeaknesses = top("OUR_TEAM", "WEAKNESS");
+    const opponentStrengths = top("OPPONENT", "STRENGTH");
+    const opponentWeaknesses = top("OPPONENT", "WEAKNESS");
+
+    const gapFor = (type: "OPPORTUNITY" | "THREAT", a: any, b: any) => gaps.find((gap) =>
+      gap.type === type &&
+      (type === "OPPORTUNITY"
+        ? gap.ourStrength === a.behaviour && gap.opponentWeakness === b.behaviour
+        : gap.ourWeakness === a.behaviour && gap.opponentStrength === b.behaviour)
+    ) ?? null;
+
+    const opportunities = ourStrengths.flatMap((strength) =>
+      opponentWeaknesses.map((weakness) => ({
+        type: "OPPORTUNITY" as const,
+        ourStrength: strength,
+        opponentWeakness: weakness,
+        interaction: "Use " + strength.behaviour + " against opponent " + weakness.behaviour,
+        gap: gapFor("OPPORTUNITY", strength, weakness),
+      }))
+    );
+
+    const threats = ourWeaknesses.flatMap((weakness) =>
+      opponentStrengths.map((strength) => ({
+        type: "THREAT" as const,
+        ourWeakness: weakness,
+        opponentStrength: strength,
+        interaction: "Protect against opponent " + strength.behaviour + " with our " + weakness.behaviour,
+        gap: gapFor("THREAT", weakness, strength),
+      }))
+    );
+
+    const supportQuadrants = {
+      strengthVsStrength: ourStrengths.flatMap((ours) =>
+        opponentStrengths.map((opponent) => ({
+          ourFinding: ours,
+          opponentFinding: opponent,
+          interaction: "Control the opponent strength: " + opponent.behaviour,
+        }))
+      ),
+      weaknessVsWeakness: ourWeaknesses.flatMap((ours) =>
+        opponentWeaknesses.map((opponent) => ({
+          ourFinding: ours,
+          opponentFinding: opponent,
+          interaction: "Potentially exploitable: " + opponent.behaviour,
+        }))
+      ),
+    };
+
+    return {
+      ourStrengths,
+      ourWeaknesses,
+      opponentStrengths,
+      opponentWeaknesses,
+      opportunities,
+      threats,
+      quadrants: supportQuadrants,
+      gaps,
+    };
   }
 
   async generateFromEvidence(userId: string, matchId: string) {
