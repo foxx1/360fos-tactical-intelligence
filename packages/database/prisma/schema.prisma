@@ -44,6 +44,20 @@ enum GapType {
   THREAT
 }
 
+enum TrainingSessionStatus {
+  DRAFT
+  READY
+  COMPLETED
+}
+
+enum TrainingExercisePhase {
+  ACTIVATION
+  POSITIONAL
+  MAIN_GAME
+  CONDITIONED_GAME
+  FINAL_GAME
+}
+
 model Organization {
   id        String   @id @default(uuid())
   name      String
@@ -134,6 +148,7 @@ model Match {
   evidence    Evidence[]
   gaps        TacticalGap[]
   priorities  TrainingPriority[]
+  trainingSessions TrainingSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -200,6 +215,7 @@ model TacticalGap {
   matchObjective     String?
   priority           PriorityLevel
   status             String       @default("OPEN")
+  exercises          TrainingExercise[]
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -231,4 +247,87 @@ model TrainingPriority {
   updatedAt DateTime @updatedAt
 
   @@index([matchId, priority])
+}
+
+
+model TrainingSession {
+  id                   String                @id @default(uuid())
+  matchId              String
+  title                String
+  sessionDay           String?
+  sessionDate          DateTime?
+  totalDurationMinutes Int?
+  intensity            String?
+  objective            String
+  matchObjective       String?
+  status               TrainingSessionStatus @default(DRAFT)
+  coachNotes           String?
+  match                Match                 @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  exercises            TrainingExercise[]
+  runtime              TrainingSessionRuntime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  @@index([matchId, sessionDate])
+}
+
+model TrainingExercise {
+  id                 String                @id @default(uuid())
+  sessionId          String
+  trainingPriorityId String?
+  tacticalGapId      String?
+  exerciseOrder      Int
+  phase              TrainingExercisePhase
+  title              String
+  objective          String
+  organization       String?
+  durationMinutes    Int?
+  players            String?
+  constraints        String?
+  coachingPoints     String?
+  successKpi         String?
+  progression        String?
+  regression         String?
+  matchBehaviour     String?
+  session            TrainingSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  trainingPriority   TrainingPriority?     @relation(fields: [trainingPriorityId], references: [id], onDelete: SetNull)
+  tacticalGap        TacticalGap?          @relation(fields: [tacticalGapId], references: [id], onDelete: SetNull)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([sessionId, exerciseOrder])
+  @@index([trainingPriorityId])
+  @@index([tacticalGapId])
+}
+
+model TrainingSessionRuntime {
+  id                 String              @id @default(uuid())
+  sessionId          String              @unique
+  currentExerciseId  String?
+  startedAt          DateTime?
+  pausedAt           DateTime?
+  elapsedSeconds     Int                 @default(0)
+  successfulReps     Int                 @default(0)
+  failedReps         Int                 @default(0)
+  coachNotes         String?
+  session            TrainingSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  currentExercise    TrainingExercise?   @relation(fields: [currentExerciseId], references: [id], onDelete: SetNull)
+  kpiEvents          TrainingKpiEvent[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model TrainingKpiEvent {
+  id          String               @id @default(uuid())
+  runtimeId   String
+  exerciseId  String?
+  result      String
+  value       Int?
+  note        String?
+  minute      Int?
+  runtime     TrainingSessionRuntime @relation(fields: [runtimeId], references: [id], onDelete: Cascade)
+  exercise    TrainingExercise?      @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  createdAt   DateTime             @default(now())
+
+  @@index([runtimeId, createdAt])
 }
