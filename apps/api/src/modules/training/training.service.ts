@@ -200,4 +200,78 @@ export class TrainingService {
 
     return { generated: true, message: "Draft training session generated from the current training priority.", session };
   }
+  async getRuntime(userId: string, matchId: string, sessionId: string) {
+    await this.getSession(userId, matchId, sessionId);
+    let runtime = await this.prisma.trainingSessionRuntime.findUnique({
+      where: { sessionId },
+      include: { kpiEvents: { orderBy: { createdAt: "desc" } } },
+    });
+    if (!runtime) {
+      const session = await this.getSession(userId, matchId, sessionId);
+      runtime = await this.prisma.trainingSessionRuntime.create({
+        data: { sessionId, currentExerciseId: session.exercises[0]?.id },
+        include: { kpiEvents: { orderBy: { createdAt: "desc" } } },
+      });
+    }
+    return runtime;
+  }
+
+  async startRuntime(userId: string, matchId: string, sessionId: string) {
+    const runtime = await this.getRuntime(userId, matchId, sessionId);
+    const now = new Date();
+    return this.prisma.trainingSessionRuntime.update({
+      where: { id: runtime.id },
+      data: { startedAt: runtime.startedAt ?? now, pausedAt: null },
+      include: { kpiEvents: { orderBy: { createdAt: "desc" } } },
+    });
+  }
+
+  async pauseRuntime(userId: string, matchId: string, sessionId: string, elapsedSeconds: number) {
+    const runtime = await this.getRuntime(userId, matchId, sessionId);
+    return this.prisma.trainingSessionRuntime.update({
+      where: { id: runtime.id },
+      data: { pausedAt: new Date(), elapsedSeconds: Math.max(0, elapsedSeconds) },
+      include: { kpiEvents: { orderBy: { createdAt: "desc" } } },
+    });
+  }
+
+  async setCurrentExercise(userId: string, matchId: string, sessionId: string, exerciseId: string) {
+    const session = await this.getSession(userId, matchId, sessionId);
+    if (!session.exercises.some((e) => e.id === exerciseId)) throw new NotFoundException("Exercise not found in session");
+    const runtime = await this.getRuntime(userId, matchId, sessionId);
+    return this.prisma.trainingSessionRuntime.update({
+      where: { id: runtime.id },
+      data: { currentExerciseId: exerciseId, pausedAt: null },
+    });
+  }
+
+  async recordKpi(userId: string, matchId: string, sessionId: string, dto: { result: string; value?: number; note?: string; minute?: number; exerciseId?: string }) {
+    const session = await this.getSession(userId, matchId, sessionId);
+    if (dto.exerciseId && !session.exercises.some((e) => e.id === dto.exerciseId)) throw new NotFoundException("Exercise not found in session");
+    const runtime = await this.getRuntime(userId, matchId, sessionId);
+    const event = await this.prisma.trainingKpiEvent.create({
+      data: { runtimeId: runtime.id, exerciseId: dto.exerciseId ?? runtime.currentExerciseId ?? undefined, result: dto.result, value: dto.value, note: dto.note, minute: dto.minute },
+    });
+    const success = dto.result.toUpperCase() === "SUCCESS";
+    await this.prisma.trainingSessionRuntime.update({
+      where: { id: runtime.id },
+      data: { successfulReps: { increment: success ? 1 : 0 }, failedReps: { increment: success ? 0 : 1 } },
+    });
+    return event;
+  }
+
+  async addCoachNote(userId: string, matchId: string, sessionId: string, note: string) {
+    const runtime = await this.getRuntime(userId, matchId, sessionId);
+    return this.prisma.trainingSessionRuntime.update({ where: { id: runtime.id }, data: { coachNotes: note } });
+  }
+
+  async completeSession(userId: string, matchId: string, sessionId: string, elapsedSeconds: number) {
+    await this.getSession(userId, matchId, sessionId);
+    await this.getRuntime(userId, matchId, sessionId);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.trainingSessionRuntime.updateMany({ where: { sessionId }, data: { pausedAt: new Date(), elapsedSeconds } });
+      return tx.trainingSession.update({ where: { id: sessionId }, data: { status: "COMPLETED" }, include: { exercises: { orderBy: { exerciseOrder: "asc" } }, runtime: { include: { kpiEvents: { orderBy: { createdAt: "asc" } } } } } });
+    });
+  }
+
 }
