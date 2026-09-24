@@ -5,7 +5,11 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  private readonly supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!);
+  private readonly supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { realtime: { enabled: false } },
+  );
 
   constructor(private readonly reflector: Reflector) {}
 
