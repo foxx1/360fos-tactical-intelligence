@@ -274,4 +274,74 @@ export class TrainingService {
     });
   }
 
+
+  async getSessionReport(userId: string, matchId: string, sessionId: string) {
+    const session = await this.getSession(userId, matchId, sessionId);
+    const runtime = await this.prisma.trainingSessionRuntime.findUnique({
+      where: { sessionId },
+      include: { kpiEvents: { orderBy: { createdAt: "asc" } } },
+    });
+    const assessment = await this.prisma.trainingSessionAssessment.findUnique({ where: { sessionId } });
+    const behaviours = await this.prisma.trainingBehaviourResult.findMany({ where: { sessionId }, orderBy: { createdAt: "asc" } });
+    const actions = await this.prisma.trainingLearningAction.findMany({ where: { sessionId }, orderBy: { createdAt: "desc" } });
+    const total = (runtime?.successfulReps ?? 0) + (runtime?.failedReps ?? 0);
+    const successRate = total ? Math.round(((runtime?.successfulReps ?? 0) / total) * 100) : 0;
+    const targetRate = 70;
+    const transfer = successRate >= targetRate ? "VALIDATED" : successRate >= 55 ? "PARTIALLY_VALIDATED" : "NOT_VALIDATED";
+    return {
+      session,
+      runtime,
+      assessment,
+      behaviours,
+      actions,
+      summary: { successRate, targetRate, totalReps: total, transferRating: transfer, status: session.status },
+    };
+  }
+
+  async generateSessionReport(userId: string, matchId: string, sessionId: string) {
+    const session = await this.getSession(userId, matchId, sessionId);
+    const runtime = await this.getRuntime(userId, matchId, sessionId);
+    const total = runtime.successfulReps + runtime.failedReps;
+    const successRate = total ? Math.round((runtime.successfulReps / total) * 100) : 0;
+    const targetRate = 70;
+    const transferRating = successRate >= targetRate ? "VALIDATED" : successRate >= 55 ? "PARTIALLY_VALIDATED" : "NOT_VALIDATED";
+    const matchReadiness = transferRating === "VALIDATED" ? "READY_TO_TRANSFER" : transferRating === "PARTIALLY_VALIDATED" ? "REQUIRES_REINFORCEMENT" : "REQUIRES_RETEACHING";
+    const result = transferRating === "VALIDATED" ? "PROGRESS" : transferRating === "PARTIALLY_VALIDATED" ? "KEEP" : "RE-TEACH";
+    const recommendation = transferRating === "VALIDATED"
+      ? "Progress the behaviour into the next representative session and validate it against match-specific opposition cues."
+      : transferRating === "PARTIALLY_VALIDATED"
+        ? "Keep the same tactical objective but increase representative repetitions and reduce coach intervention."
+        : "Re-teach the behaviour with simpler constraints before progressing to a full game.";
+    const assessment = await this.prisma.trainingSessionAssessment.upsert({
+      where: { sessionId },
+      create: { sessionId, overallScore: successRate, transferRating, coachAssessment: runtime.coachNotes, issues: runtime.failedReps ? "The target behaviour still produced failed repetitions during the session." : null, nextAction: recommendation, matchReadiness, strengths: runtime.successfulReps ? "The target behaviour produced successful repetitions under the session constraints." : null },
+      update: { overallScore: successRate, transferRating, coachAssessment: runtime.coachNotes, issues: runtime.failedReps ? "The target behaviour still produced failed repetitions during the session." : null, nextAction: recommendation, matchReadiness, strengths: runtime.successfulReps ? "The target behaviour produced successful repetitions under the session constraints." : null },
+    });
+    const priority = await this.prisma.trainingPriority.findFirst({ where: { matchId }, orderBy: [{ priority: "asc" }, { rank: "asc" }] });
+    const gap = priority ? await this.prisma.tacticalGap.findFirst({ where: { matchId, OR: [{ trainingObjective: { contains: priority.objective, mode: "insensitive" } }, { matchObjective: { contains: priority.matchObjective ?? priority.objective, mode: "insensitive" } }] }, orderBy: { createdAt: "asc" } }) : null;
+    await this.prisma.trainingLearningAction.deleteMany({ where: { sessionId } });
+    const action = await this.prisma.trainingLearningAction.create({ data: { sessionId, sourcePriorityId: priority?.id, sourceGapId: gap?.id, result, recommendation } });
+    return this.getSessionReport(userId, matchId, sessionId);
+  }
+
+  async recordBehaviourResult(userId: string, matchId: string, sessionId: string, dto: { exerciseId?: string; behaviour: string; targetKpi?: string; successfulReps?: number; failedReps?: number; coachRating?: number; observation?: string }) {
+    const session = await this.getSession(userId, matchId, sessionId);
+    if (dto.exerciseId && !session.exercises.some((e) => e.id === dto.exerciseId)) throw new NotFoundException("Exercise not found in session");
+    const success = dto.successfulReps ?? 0;
+    const failure = dto.failedReps ?? 0;
+    const total = success + failure;
+    return this.prisma.trainingBehaviourResult.create({
+      data: { sessionId, exerciseId: dto.exerciseId, behaviour: dto.behaviour, targetKpi: dto.targetKpi, successfulReps: success, failedReps: failure, successRate: total ? (success / total) * 100 : 0, coachRating: dto.coachRating, observation: dto.observation },
+    });
+  }
+
+  async updateAssessment(userId: string, matchId: string, sessionId: string, dto: { overallScore?: number; transferRating?: string; coachAssessment?: string; strengths?: string; issues?: string; nextAction?: string; matchReadiness?: string }) {
+    await this.getSession(userId, matchId, sessionId);
+    return this.prisma.trainingSessionAssessment.upsert({
+      where: { sessionId },
+      create: { sessionId, ...dto },
+      update: dto,
+    });
+  }
+
 }
