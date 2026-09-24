@@ -45,6 +45,7 @@ alter table public.training_session_assessments enable row level security;
 alter table public.training_behaviour_results enable row level security;
 alter table public.training_learning_actions enable row level security;
 
+drop policy if exists "training assessments org access" on public.training_session_assessments;
 create policy "training assessments org access" on public.training_session_assessments
 for all to authenticated
 using (exists (
@@ -62,6 +63,7 @@ with check (exists (
     and public.is_org_member(t.organization_id)
 ));
 
+drop policy if exists "training behaviour results org access" on public.training_behaviour_results;
 create policy "training behaviour results org access" on public.training_behaviour_results
 for all to authenticated
 using (exists (
@@ -79,6 +81,7 @@ with check (exists (
     and public.is_org_member(t.organization_id)
 ));
 
+drop policy if exists "training learning actions org access" on public.training_learning_actions;
 create policy "training learning actions org access" on public.training_learning_actions
 for all to authenticated
 using (exists (
