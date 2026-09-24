@@ -14,7 +14,7 @@ type Match = {
 
 const tabs = [
   ["Overview", "overview"], ["Our Team", "our-team"], ["Opponent", "opponent"], ["Evidence", "evidence"],
-  ["Strengths & Weaknesses", "sw"], ["Gap Analysis", "gaps"], ["Training Priorities", "training"], ["Match Plan", "plan"]
+  ["Strengths & Weaknesses", "sw"], ["Intelligence Matrix", "matrix"], ["Training Priorities", "training"], ["Match Plan", "plan"]
 ];
 
 export default function MatchWorkspacePage() {
@@ -45,7 +45,11 @@ export default function MatchWorkspacePage() {
           <div className="team-mark">{match.team.name.slice(0,1)}</div><div><h1>{match.team.name} <em>vs</em> {match.opponent.name}</h1><p>{match.competition?.name ?? "Competition"} · {match.season?.name ?? "Season"} · {new Date(match.matchDate).toLocaleDateString()} · {match.venue ?? "Venue not set"}</p></div>
           <div className="score-block"><span className="pill green">{match.status}</span><strong>{match.ourScore ?? "—"} : {match.opponentScore ?? "—"}</strong><small>{match.formation ?? "Formation not set"} · {match.isHome ? "Home" : "Away"}</small></div>
         </section>
-        <div className="workspace-tabs">{tabs.map(([label,key],i)=>key==="evidence" ? <Link className="workspace-tab-link" href={"/matches/"+params.id+"/evidence"} key={key}>{label}</Link> : <button className={i===0?"active":""} key={key}>{label}</button>)}</div>
+        <div className="workspace-tabs">{tabs.map(([label,key],i)=>{
+          if (key==="evidence") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/evidence"} key={key}>{label}</Link>;
+          if (key==="matrix") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/intelligence"} key={key}>{label}</Link>;
+          return <button className={i===0?"active":""} key={key}>{label}</button>;
+        })}</div>
 
         <section className="metric-grid">
           <Metric label="Evidence" value={match._count.evidence} sub="Tagged match moments" icon="◈"/>
@@ -60,7 +64,11 @@ export default function MatchWorkspacePage() {
         </section>
 
         <section className="workspace-card next-actions"><div className="card-title"><div><span className="section-kicker">NEXT ACTIONS</span><h2>Build the intelligence</h2></div></div><div className="action-grid">
-          <Action title="Add Evidence" text="Tag key moments from video" icon="◈"/><Action title="Analyse Our Team" text="Record repeatable behaviours" icon="◆"/><Action title="Scout Opponent" text="Capture strengths and weaknesses" icon="◌"/><Action title="Create Tactical Gap" text="Connect the two analyses" icon="⚠"/><Action title="Build Training Priority" text="Convert diagnosis into practice" icon="⚽"/>
+          <Link className="next-action" href={"/matches/"+params.id+"/evidence"}><span>◈</span><div><b>Add Evidence</b><small>Tag key moments from video</small></div><i>→</i></Link>
+          <Link className="next-action" href={"/matches/"+params.id+"/evidence"}><span>◆</span><div><b>Analyse Our Team</b><small>Record repeatable behaviours</small></div><i>→</i></Link>
+          <Link className="next-action" href={"/matches/"+params.id+"/evidence"}><span>◌</span><div><b>Scout Opponent</b><small>Capture strengths and weaknesses</small></div><i>→</i></Link>
+          <Link className="next-action" href={"/matches/"+params.id+"/intelligence"}><span>⚠</span><div><b>Intelligence Matrix</b><small>Connect the two analyses</small></div><i>→</i></Link>
+          <Link className="next-action" href={"/matches/"+params.id+"/intelligence"}><span>⚽</span><div><b>Coach Review</b><small>Convert diagnosis into practice</small></div><i>→</i></Link>
         </div></section>
       </section>
     </main>
@@ -68,4 +76,3 @@ export default function MatchWorkspacePage() {
 }
 
 function Metric({label,value,sub,icon}:{label:string,value:number,sub:string,icon:string}){return <article className="metric-card"><span className="metric-icon">{icon}</span><div><span>{label}</span><strong>{value}</strong><small>{sub}</small></div></article>}
-function Action({title,text,icon}:{title:string,text:string,icon:string}){return <button className="next-action"><span>{icon}</span><div><b>{title}</b><small>{text}</small></div><i>→</i></button>}
