@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../database/prisma.service";
-import { Prisma } from "@prisma/client";
 import { CreateTrainingPriorityDto } from "./dto/create-training-priority.dto";
 import { CreateTrainingSessionDto } from "./dto/create-training-session.dto";
 import { UpdateTrainingSessionDto } from "./dto/update-training-session.dto";
@@ -54,7 +53,7 @@ export class TrainingService {
       const teamBehaviour = gap.teamBehaviour ?? (isOpportunity ? "Create the conditions to isolate the target area and attack with support." : "Protect the vulnerable space with coordinated pressure, cover and balance.");
       const constraint = isOpportunity ? "Reward the attacking team only when the target weakness is attacked within 5 seconds of recognition." : "Restart if the defensive unit fails to provide pressure, cover or balance within 5 seconds.";
       const successKpi = isOpportunity ? "Target behaviour appears in at least 70% of representative repetitions with successful penetration or final action." : "Defensive unit prevents the target progression in at least 70% of representative repetitions.";
-      const priorityRecord: Prisma.TrainingPriority = await this.prisma.trainingPriority.create({
+      const priorityRecord = await this.prisma.trainingPriority.create({
         data: {
           matchId, rank: created.length + 1, priority: gap.priority,
           problem: isOpportunity ? "Exploit: " + (gap.opponentWeakness ?? gap.interaction) : "Protect: " + (gap.opponentStrength ?? gap.interaction),
