@@ -265,7 +265,10 @@ model TrainingSession {
   coachNotes           String?
   match                Match                 @relation(fields: [matchId], references: [id], onDelete: Cascade)
   exercises            TrainingExercise[]
-  runtime              TrainingSessionRuntime?
+  runtime             TrainingSessionRuntime?
+  assessment         TrainingSessionAssessment?
+  behaviourResults   TrainingBehaviourResult[]
+  learningActions    TrainingLearningAction[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
@@ -293,6 +296,7 @@ model TrainingExercise {
   session            TrainingSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   runtime            TrainingSessionRuntime[]
   kpiEvents          TrainingKpiEvent[]
+  behaviourResults   TrainingBehaviourResult[]
   trainingPriority   TrainingPriority?     @relation(fields: [trainingPriorityId], references: [id], onDelete: SetNull)
   tacticalGap        TacticalGap?          @relation(fields: [tacticalGapId], references: [id], onDelete: SetNull)
   createdAt          DateTime              @default(now())
@@ -301,6 +305,57 @@ model TrainingExercise {
   @@index([sessionId, exerciseOrder])
   @@index([trainingPriorityId])
   @@index([tacticalGapId])
+}
+
+
+model TrainingSessionAssessment {
+  id              String          @id @default(uuid())
+  sessionId       String          @unique
+  overallScore    Float?
+  transferRating  String?
+  coachAssessment String?
+  strengths       String?
+  issues          String?
+  nextAction      String?
+  matchReadiness  String?
+  session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model TrainingBehaviourResult {
+  id             String          @id @default(uuid())
+  sessionId      String
+  exerciseId     String?
+  behaviour      String
+  targetKpi      String?
+  successfulReps Int             @default(0)
+  failedReps     Int             @default(0)
+  successRate    Float?
+  coachRating    Float?
+  observation    String?
+  session        TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise       TrainingExercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([sessionId])
+  @@index([exerciseId])
+}
+
+model TrainingLearningAction {
+  id               String          @id @default(uuid())
+  sessionId        String
+  sourcePriorityId String?
+  sourceGapId      String?
+  result           String
+  recommendation   String
+  session          TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt        DateTime        @default(now())
+
+  @@index([sessionId])
+  @@index([sourcePriorityId])
+  @@index([sourceGapId])
 }
 
 model TrainingSessionRuntime {
