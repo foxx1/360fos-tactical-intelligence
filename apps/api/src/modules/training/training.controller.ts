@@ -53,4 +53,39 @@ export class TrainingController {
   createExercise(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() dto: CreateTrainingExerciseDto) {
     return { success: true, data: this.service.createExercise(req.user.id, matchId, sessionId, dto) };
   }
+  
+  @Get("training-sessions/:sessionId/runtime")
+  getRuntime(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string) {
+    return { success: true, data: this.service.getRuntime(req.user.id, matchId, sessionId) };
+  }
+
+  @Post("training-sessions/:sessionId/runtime/start")
+  startRuntime(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string) {
+    return { success: true, data: this.service.startRuntime(req.user.id, matchId, sessionId) };
+  }
+
+  @Post("training-sessions/:sessionId/runtime/pause")
+  pauseRuntime(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() body: { elapsedSeconds?: number }) {
+    return { success: true, data: this.service.pauseRuntime(req.user.id, matchId, sessionId, body.elapsedSeconds ?? 0) };
+  }
+
+  @Post("training-sessions/:sessionId/runtime/exercise")
+  setCurrentExercise(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() body: { exerciseId: string }) {
+    return { success: true, data: this.service.setCurrentExercise(req.user.id, matchId, sessionId, body.exerciseId) };
+  }
+
+  @Post("training-sessions/:sessionId/runtime/kpi")
+  recordKpi(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() body: { result: string; value?: number; note?: string; minute?: number; exerciseId?: string }) {
+    return { success: true, data: this.service.recordKpi(req.user.id, matchId, sessionId, body) };
+  }
+
+  @Post("training-sessions/:sessionId/runtime/note")
+  addCoachNote(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() body: { note: string }) {
+    return { success: true, data: this.service.addCoachNote(req.user.id, matchId, sessionId, body.note) };
+  }
+
+  @Post("training-sessions/:sessionId/runtime/complete")
+  completeSession(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() body: { elapsedSeconds?: number }) {
+    return { success: true, data: this.service.completeSession(req.user.id, matchId, sessionId, body.elapsedSeconds ?? 0) };
+  }
 }
