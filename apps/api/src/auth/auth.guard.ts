@@ -11,7 +11,7 @@ export class AuthGuard implements CanActivate {
     process.env.SUPABASE_PUBLISHABLE_KEY!,
     {
       realtime: {
-        transport: WebSocket,
+        transport: WebSocket as any,
       },
     },
   );
