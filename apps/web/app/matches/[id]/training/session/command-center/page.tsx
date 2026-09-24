@@ -1,0 +1,41 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+type Exercise={id:string;exerciseOrder:number;phase:string;title:string;objective:string;durationMinutes?:number|null;constraints?:string|null;coachingPoints?:string|null;successKpi?:string|null;matchBehaviour?:string|null};
+type Session={id:string;title:string;sessionDay?:string|null;totalDurationMinutes?:number|null;intensity?:string|null;objective:string;matchObjective?:string|null;status:string;exercises:Exercise[]};
+type Runtime={currentExerciseId?:string|null;startedAt?:string|null;pausedAt?:string|null;elapsedSeconds:number;successfulReps:number;failedReps:number;coachNotes?:string|null};
+const baseUrl=()=>process.env.NEXT_PUBLIC_API_URL??"http://localhost:4000/api/v1";
+
+export default function CoachCommandCenter(){
+ const params=useParams<{id:string}>();const router=useRouter();
+ const [session,setSession]=useState<Session|null>(null);const [runtime,setRuntime]=useState<Runtime|null>(null);const [loading,setLoading]=useState(true);const [running,setRunning]=useState(false);const [elapsed,setElapsed]=useState(0);const [note,setNote]=useState("");const [error,setError]=useState("");
+ async function auth(){const {data:{session}}=await createClient().auth.getSession();if(!session){router.replace("/login");return null}return session}
+ async function api(path:string,options:RequestInit={}){const s=await auth();if(!s)return null;return fetch(baseUrl()+path,{...options,headers:{Authorization:"Bearer "+s.access_token,"Content-Type":"application/json",...(options.headers??{})}})}
+ async function load(){const s=await auth();if(!s)return;const list=await fetch(baseUrl()+"/matches/"+params.id+"/training-sessions",{headers:{Authorization:"Bearer "+s.access_token}});const j=await list.json();const sess=(j.data??[])[0];if(!sess){setError("No training session found. Generate one first.");setLoading(false);return}setSession(sess);const rr=await fetch(baseUrl()+"/matches/"+params.id+"/training-sessions/"+sess.id+"/runtime",{headers:{Authorization:"Bearer "+s.access_token}});const rj=await rr.json();setRuntime(rj.data);setElapsed(rj.data?.elapsedSeconds??0);setLoading(false)}
+ useEffect(()=>{load()},[params.id]);
+ useEffect(()=>{if(!running)return;const id=window.setInterval(()=>setElapsed(v=>v+1),1000);return()=>window.clearInterval(id)},[running]);
+ const current=useMemo(()=>session?.exercises.find(e=>e.id===runtime?.currentExerciseId)??session?.exercises[0],[session,runtime]);
+ const mins=Math.floor(elapsed/60).toString().padStart(2,"0"),secs=(elapsed%60).toString().padStart(2,"0");
+ async function start(){const r=await api("/matches/"+params.id+"/training-sessions/"+session!.id+"/runtime/start",{method:"POST"});if(r?.ok){setRunning(true);const j=await r.json();setRuntime(j.data)}}
+ async function pause(){setRunning(false);await api("/matches/"+params.id+"/training-sessions/"+session!.id+"/runtime/pause",{method:"POST",body:JSON.stringify({elapsedSeconds:elapsed})})}
+ async function selectExercise(id:string){const r=await api("/matches/"+params.id+"/training-sessions/"+session!.id+"/runtime/exercise",{method:"POST",body:JSON.stringify({exerciseId:id})});if(r?.ok){const j=await r.json();setRuntime(v=>({...v,...j.data}))}}
+ async function kpi(result:string){const r=await api("/matches/"+params.id+"/training-sessions/"+session!.id+"/runtime/kpi",{method:"POST",body:JSON.stringify({result,exerciseId:current?.id,minute:Math.floor(elapsed/60)})});if(r?.ok){const j=await r.json();setRuntime(v=>({...v!,successfulReps:(v?.successfulReps??0)+(result==="SUCCESS"?1:0),failedReps:(v?.failedReps??0)+(result==="FAILURE"?1:0)}))}}
+ async function saveNote(){if(!note.trim())return;await api("/matches/"+params.id+"/training-sessions/"+session!.id+"/runtime/note",{method:"POST",body:JSON.stringify({note})});setRuntime(v=>({...v!,coachNotes:note}));setNote("")}
+ async function complete(){setRunning(false);await api("/matches/"+params.id+"/training-sessions/"+session!.id+"/runtime/complete",{method:"POST",body:JSON.stringify({elapsedSeconds:elapsed})});router.push("/matches/"+params.id+"/training/session/report")}
+ if(loading)return <main className="fos-loading">Loading Coach Session Command Center...</main>;
+ return <main className="fos-shell"><aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/">⚽ <span>Training</span></Link><Link href="/">▤ <span>Reports</span></Link></nav><div className="sidebar-footer">360FOS<br/><small>Turn Analysis into Performance</small></div></aside>
+ <section className="fos-main"><header className="fos-topbar"><div className="fos-search fake-search">⌕ Coach Command Center</div><div className="fos-user">LIVE SESSION <span>•</span> {session?.sessionDay??"MD-3"}</div></header>
+ <div className="breadcrumb-row"><Link href={"/matches/"+params.id+"/training"}>Training Planner</Link><span>›</span><Link href={"/matches/"+params.id+"/training/session"}>Session Builder</Link><span>›</span><b>Coach Command Center</b></div>
+ <section className="page-heading"><div><div className="crumb">LIVE TRAINING / COMMAND CENTER</div><h1>{session?.title}</h1><p>{session?.objective}</p></div><div className="heading-actions"><span className="ai-badge">LIVE · COACH CONTROL</span><button className="primary-action" onClick={complete}>Complete Session</button></div></section>
+ {error&&<div className="error-box planner-message">{error}</div>}
+ {session&&<><section className="command-grid"><article className="workspace-card command-timer"><span className="section-kicker">SESSION CLOCK</span><div className="big-clock">{mins}:{secs}</div><div className="clock-actions"><button className="primary-action" onClick={running?pause:start}>{running?"Pause":"Start Session"}</button></div><div className="command-stat"><b>{session.totalDurationMinutes??0} min</b><span>planned</span></div></article>
+ <article className="workspace-card live-objective"><span className="section-kicker">CURRENT EXERCISE</span><h2>{current?.title}</h2><p>{current?.objective}</p><div className="live-constraint"><b>CONSTRAINT</b><span>{current?.constraints??"—"}</span></div><div className="live-coaching"><b>COACHING POINTS</b><span>{current?.coachingPoints??"—"}</span></div></article>
+ <article className="workspace-card kpi-panel"><span className="section-kicker">LIVE KPI</span><div className="rep-score"><div><b>{runtime?.successfulReps??0}</b><span>SUCCESS</span></div><div><b>{runtime?.failedReps??0}</b><span>FAILURE</span></div></div><div className="kpi-actions"><button onClick={()=>kpi("SUCCESS")}>+ Success</button><button onClick={()=>kpi("FAILURE")}>+ Failure</button></div><p>{current?.successKpi??"Track the target behaviour."}</p></article></section>
+ <section className="command-layout"><div><div className="section-header"><div><span className="section-kicker">SESSION FLOW</span><h2>Exercises</h2></div></div><div className="exercise-stack">{session.exercises.map(e=><button key={e.id} className={"exercise-row "+(e.id===current?.id?"selected":"")} onClick={()=>selectExercise(e.id)}><span>{String(e.exerciseOrder).padStart(2,"0")}</span><div><b>{e.phase.replaceAll("_"," ")}</b><strong>{e.title}</strong></div><em>{e.durationMinutes} min</em></button>)}</div></div>
+ <aside className="workspace-card coach-notes"><span className="section-kicker">COACH NOTES</span><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Record live observations, player behaviours, tactical issues..." /><button className="secondary-action" onClick={saveNote}>Save Note</button>{runtime?.coachNotes&&<div className="saved-note">{runtime.coachNotes}</div>}<div className="match-transfer"><span className="section-kicker">MATCH BEHAVIOUR</span><p>{current?.matchBehaviour??session.matchObjective}</p></div></aside></section></>}
+ </section></main>
+}

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: 360fos-tactical-intelligence-api
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npx prisma generate --schema packages/database/prisma/schema.prisma && npm run build:api
+    startCommand: npm run start:api
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PORT
+        value: "4000"
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        value: "https://hhrxibzznflzmkltando.supabase.co"
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false

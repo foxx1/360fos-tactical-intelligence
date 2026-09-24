@@ -1,0 +1,391 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MatchStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TacticalPhase {
+  IN_POSSESSION
+  OUT_OF_POSSESSION
+  ATTACKING_TRANSITION
+  DEFENSIVE_TRANSITION
+  SET_PIECE
+}
+
+enum AnalysisType {
+  OUR_TEAM
+  OPPONENT
+}
+
+enum FindingType {
+  STRENGTH
+  WEAKNESS
+}
+
+enum PriorityLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum GapType {
+  OPPORTUNITY
+  THREAT
+}
+
+enum TrainingSessionStatus {
+  DRAFT
+  READY
+  COMPLETED
+}
+
+enum TrainingExercisePhase {
+  ACTIVATION
+  POSITIONAL
+  MAIN_GAME
+  CONDITIONED_GAME
+  FINAL_GAME
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  teams     Team[]
+  users     OrganizationUser[]
+  competitions Competition[]
+  opponents Opponent[]
+}
+
+model OrganizationUser {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  role           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model Team {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  seasons        Season[]
+  matches        Match[]      @relation("OurTeamMatches")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+}
+
+model Season {
+  id        String   @id @default(uuid())
+  teamId    String
+  name      String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  matches   Match[]
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, name])
+}
+
+model Competition {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  matches        Match[]
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, name])
+}
+
+model Opponent {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  matches        Match[]      @relation("OpponentMatches")
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, name])
+}
+
+model Match {
+  id            String      @id @default(uuid())
+  teamId        String
+  seasonId      String?
+  competitionId String?
+  opponentId    String
+  matchDate     DateTime
+  venue         String?
+  isHome        Boolean     @default(true)
+  status        MatchStatus @default(PLANNED)
+  ourScore      Int?
+  opponentScore Int?
+  formation     String?
+
+  team        Team         @relation("OurTeamMatches", fields: [teamId], references: [id], onDelete: Cascade)
+  season      Season?      @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  competition Competition? @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  opponent    Opponent     @relation("OpponentMatches", fields: [opponentId], references: [id], onDelete: Cascade)
+  analyses    Analysis[]
+  evidence    Evidence[]
+  gaps        TacticalGap[]
+  priorities  TrainingPriority[]
+  trainingSessions TrainingSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId, matchDate])
+  @@index([opponentId, matchDate])
+}
+
+model Analysis {
+  id          String       @id @default(uuid())
+  matchId     String
+  type        AnalysisType
+  phase       TacticalPhase
+  subPhase    String
+  behaviour   String
+  evidence    String?
+  frequency   Int          @default(1)
+  successPct  Float?
+  impact      Int?
+  findingType FindingType?
+  priority    PriorityLevel?
+  videoRef    String?
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([matchId, type, phase])
+}
+
+model Evidence {
+  id        String        @id @default(uuid())
+  matchId   String
+  minute    Float
+  phase     TacticalPhase
+  event     String
+  zone      String?
+  impact    Int?
+  note      String
+  videoRef      String?
+  analysisType  AnalysisType @default(OPPONENT)
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([matchId, minute])
+}
+
+model TacticalGap {
+  id                 String       @id @default(uuid())
+  matchId            String
+  type               GapType
+  ourStrength        String?
+  ourWeakness        String?
+  opponentStrength   String?
+  opponentWeakness   String?
+  interaction        String
+  opportunity        String?
+  threat             String?
+  tacticalPrinciple  String?
+  playerBehaviour    String?
+  teamBehaviour      String?
+  trainingObjective  String?
+  matchObjective     String?
+  priority           PriorityLevel
+  status             String       @default("OPEN")
+  exercises          TrainingExercise[]
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([matchId, priority])
+}
+
+model TrainingPriority {
+  id              String        @id @default(uuid())
+  matchId         String
+  rank            Int?
+  priority        PriorityLevel
+  problem         String
+  evidence        String?
+  diagnosis       String?
+  objective       String
+  exerciseType    String?
+  constraint      String?
+  players         String?
+  durationMinutes Int?
+  intensity       String?
+  successKpi      String?
+  matchObjective  String?
+  sessionDay      String?
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  exercises TrainingExercise[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([matchId, priority])
+}
+
+
+model TrainingSession {
+  id                   String                @id @default(uuid())
+  matchId              String
+  title                String
+  sessionDay           String?
+  sessionDate          DateTime?
+  totalDurationMinutes Int?
+  intensity            String?
+  objective            String
+  matchObjective       String?
+  status               TrainingSessionStatus @default(DRAFT)
+  coachNotes           String?
+  match                Match                 @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  exercises            TrainingExercise[]
+  runtime             TrainingSessionRuntime?
+  assessment         TrainingSessionAssessment?
+  behaviourResults   TrainingBehaviourResult[]
+  learningActions    TrainingLearningAction[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  @@index([matchId, sessionDate])
+}
+
+model TrainingExercise {
+  id                 String                @id @default(uuid())
+  sessionId          String
+  trainingPriorityId String?
+  tacticalGapId      String?
+  exerciseOrder      Int
+  phase              TrainingExercisePhase
+  title              String
+  objective          String
+  organization       String?
+  durationMinutes    Int?
+  players            String?
+  constraints        String?
+  coachingPoints     String?
+  successKpi         String?
+  progression        String?
+  regression         String?
+  matchBehaviour     String?
+  session            TrainingSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  runtime            TrainingSessionRuntime[]
+  kpiEvents          TrainingKpiEvent[]
+  behaviourResults   TrainingBehaviourResult[]
+  trainingPriority   TrainingPriority?     @relation(fields: [trainingPriorityId], references: [id], onDelete: SetNull)
+  tacticalGap        TacticalGap?          @relation(fields: [tacticalGapId], references: [id], onDelete: SetNull)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([sessionId, exerciseOrder])
+  @@index([trainingPriorityId])
+  @@index([tacticalGapId])
+}
+
+
+model TrainingSessionAssessment {
+  id              String          @id @default(uuid())
+  sessionId       String          @unique
+  overallScore    Float?
+  transferRating  String?
+  coachAssessment String?
+  strengths       String?
+  issues          String?
+  nextAction      String?
+  matchReadiness  String?
+  session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model TrainingBehaviourResult {
+  id             String          @id @default(uuid())
+  sessionId      String
+  exerciseId     String?
+  behaviour      String
+  targetKpi      String?
+  successfulReps Int             @default(0)
+  failedReps     Int             @default(0)
+  successRate    Float?
+  coachRating    Float?
+  observation    String?
+  session        TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise       TrainingExercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([sessionId])
+  @@index([exerciseId])
+}
+
+model TrainingLearningAction {
+  id               String          @id @default(uuid())
+  sessionId        String
+  sourcePriorityId String?
+  sourceGapId      String?
+  result           String
+  recommendation   String
+  session          TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt        DateTime        @default(now())
+
+  @@index([sessionId])
+  @@index([sourcePriorityId])
+  @@index([sourceGapId])
+}
+
+model TrainingSessionRuntime {
+  id                 String              @id @default(uuid())
+  sessionId          String              @unique
+  currentExerciseId  String?
+  startedAt          DateTime?
+  pausedAt           DateTime?
+  elapsedSeconds     Int                 @default(0)
+  successfulReps     Int                 @default(0)
+  failedReps         Int                 @default(0)
+  coachNotes         String?
+  session            TrainingSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  currentExercise    TrainingExercise?   @relation(fields: [currentExerciseId], references: [id], onDelete: SetNull)
+  kpiEvents          TrainingKpiEvent[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model TrainingKpiEvent {
+  id          String               @id @default(uuid())
+  runtimeId   String
+  exerciseId  String?
+  result      String
+  value       Int?
+  note        String?
+  minute      Int?
+  runtime     TrainingSessionRuntime @relation(fields: [runtimeId], references: [id], onDelete: Cascade)
+  exercise    TrainingExercise?      @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  createdAt   DateTime             @default(now())
+
+  @@index([runtimeId, createdAt])
+}
