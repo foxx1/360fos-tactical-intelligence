@@ -15,4 +15,5 @@ export class CreateTrainingPriorityDto {
   @IsOptional() @IsString() intensity?: string;
   @IsOptional() @IsString() successKpi?: string;
   @IsOptional() @IsString() matchObjective?: string;
+  @IsOptional() @IsString() sessionDay?: string;
 }
