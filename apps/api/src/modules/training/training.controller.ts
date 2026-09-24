@@ -54,6 +54,27 @@ export class TrainingController {
     return { success: true, data: this.service.createExercise(req.user.id, matchId, sessionId, dto) };
   }
   
+
+  @Get("training-sessions/:sessionId/report")
+  getSessionReport(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string) {
+    return { success: true, data: this.service.getSessionReport(req.user.id, matchId, sessionId) };
+  }
+
+  @Post("training-sessions/:sessionId/report/generate")
+  generateSessionReport(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string) {
+    return { success: true, data: this.service.generateSessionReport(req.user.id, matchId, sessionId) };
+  }
+
+  @Patch("training-sessions/:sessionId/assessment")
+  updateAssessment(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() body: any) {
+    return { success: true, data: this.service.updateAssessment(req.user.id, matchId, sessionId, body) };
+  }
+
+  @Post("training-sessions/:sessionId/behaviour-results")
+  recordBehaviourResult(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string, @Body() body: any) {
+    return { success: true, data: this.service.recordBehaviourResult(req.user.id, matchId, sessionId, body) };
+  }
+
   @Get("training-sessions/:sessionId/runtime")
   getRuntime(@Req() req: any, @Param("matchId") matchId: string, @Param("sessionId") sessionId: string) {
     return { success: true, data: this.service.getRuntime(req.user.id, matchId, sessionId) };
