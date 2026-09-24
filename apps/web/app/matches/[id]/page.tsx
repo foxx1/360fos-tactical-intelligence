@@ -48,6 +48,7 @@ export default function MatchWorkspacePage() {
         <div className="workspace-tabs">{tabs.map(([label,key],i)=>{
           if (key==="evidence") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/evidence"} key={key}>{label}</Link>;
           if (key==="matrix") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/intelligence"} key={key}>{label}</Link>;
+          if (key==="training") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/training"} key={key}>{label}</Link>;
           return <button className={i===0?"active":""} key={key}>{label}</button>;
         })}</div>
 
