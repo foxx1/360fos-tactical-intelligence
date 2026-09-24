@@ -207,7 +207,7 @@ export default function IntelligenceMatrixPage() {
           </div>
           <div className="heading-actions">
             <Link className="secondary-action" href={"/matches/" + params.id}>Workspace</Link>
-            <Link className="primary-action" href={"/matches/" + params.id + "/evidence"}>Capture Evidence →</Link>
+            <Link className="secondary-action" href={"/matches/" + params.id + "/training"}>Training Planner →</Link><Link className="primary-action" href={"/matches/" + params.id + "/evidence"}>Capture Evidence →</Link>
           </div>
         </section>
 
