@@ -1,14 +1,17 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { createClient } from '@supabase/supabase-js';
 import { IS_PUBLIC_KEY } from './public.decorator';
+
+type SupabaseUser = {
+  id: string;
+  email?: string;
+  [key: string]: unknown;
+};
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  private readonly supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-  );
+  private readonly supabaseUrl = process.env.SUPABASE_URL!;
+  private readonly supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
 
   constructor(private readonly reflector: Reflector) {}
 
@@ -26,12 +29,35 @@ export class AuthGuard implements CanActivate {
     }
 
     const token = authorization.slice(7);
-    const { data, error } = await this.supabase.auth.getUser(token);
-    if (error || !data.user) {
-      throw new UnauthorizedException('Invalid or expired access token');
-    }
 
-    request.user = data.user;
-    return true;
+    try {
+      const response = await fetch(`${this.supabaseUrl}/auth/v1/user`, {
+        method: 'GET',
+        headers: {
+          apikey: this.supabasePublishableKey,
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new UnauthorizedException('Invalid or expired access token');
+      }
+
+      const user = (await response.json()) as SupabaseUser;
+
+      if (!user?.id) {
+        throw new UnauthorizedException('Invalid or expired access token');
+      }
+
+      request.user = user;
+      return true;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      throw new UnauthorizedException('Unable to validate access token');
+    }
   }
 }
