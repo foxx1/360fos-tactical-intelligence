@@ -320,7 +320,7 @@ export class TrainingService {
     const priority = await this.prisma.trainingPriority.findFirst({ where: { matchId }, orderBy: [{ priority: "asc" }, { rank: "asc" }] });
     const gap = priority ? await this.prisma.tacticalGap.findFirst({ where: { matchId, OR: [{ trainingObjective: { contains: priority.objective, mode: "insensitive" } }, { matchObjective: { contains: priority.matchObjective ?? priority.objective, mode: "insensitive" } }] }, orderBy: { createdAt: "asc" } }) : null;
     await this.prisma.trainingLearningAction.deleteMany({ where: { sessionId } });
-    const action = await this.prisma.trainingLearningAction.create({ data: { sessionId, sourcePriorityId: priority?.id, sourceGapId: gap?.id, result, recommendation } });
+    await this.prisma.trainingLearningAction.create({ data: { sessionId, sourcePriorityId: priority?.id, sourceGapId: gap?.id, result, recommendation } });
     return this.getSessionReport(userId, matchId, sessionId);
   }
 
