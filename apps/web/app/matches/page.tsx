@@ -25,8 +25,17 @@ export default function MatchesPage() {
         headers: { Authorization: "Bearer " + session.access_token }
       });
       if (response.ok) {
-        const result = await response.json();
-        setMatches(result.data ?? []);
+        const result: unknown = await response.json().catch(() => null);
+        const data =
+          result && typeof result === "object" && "data" in result
+            ? (result as { data?: unknown }).data
+            : null;
+
+        if (Array.isArray(data)) {
+          setMatches(data as Match[]);
+        } else {
+          setMatches([]);
+        }
       }
       setLoading(false);
     })();
