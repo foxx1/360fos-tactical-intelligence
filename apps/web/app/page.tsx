@@ -16,32 +16,56 @@ function normalizeWorkspace(value: unknown): Workspace | null {
   if (!value || typeof value !== "object") return null;
 
   const raw = value as Record<string, unknown>;
-  const teams = Array.isArray(raw.teams)
-    ? raw.teams.filter((team): team is Record<string, unknown> => !!team && typeof team === "object").map((team) => ({
+
+  const teams: Workspace["teams"] = [];
+  if (Array.isArray(raw.teams)) {
+    for (const teamValue of raw.teams) {
+      if (!teamValue || typeof teamValue !== "object") continue;
+      const team = teamValue as Record<string, unknown>;
+
+      const seasons: { id: string; name: string }[] = [];
+      if (Array.isArray(team.seasons)) {
+        for (const seasonValue of team.seasons) {
+          if (!seasonValue || typeof seasonValue !== "object") continue;
+          const season = seasonValue as Record<string, unknown>;
+          seasons.push({
+            id: typeof season.id === "string" ? season.id : "",
+            name: typeof season.name === "string" ? season.name : "Unnamed season"
+          });
+        }
+      }
+
+      teams.push({
         id: typeof team.id === "string" ? team.id : "",
         name: typeof team.name === "string" ? team.name : "Unnamed team",
-        seasons: Array.isArray(team.seasons)
-          ? team.seasons.filter((season): season is Record<string, unknown> => !!season && typeof season === "object").map((season) => ({
-              id: typeof season.id === "string" ? season.id : "",
-              name: typeof season.name === "string" ? season.name : "Unnamed season"
-            }))
-          : []
-      }))
-    : [];
+        seasons
+      });
+    }
+  }
 
-  const opponents = Array.isArray(raw.opponents)
-    ? raw.opponents.filter((opponent): opponent is Record<string, unknown> => !!opponent && typeof opponent === "object").map((opponent) => ({
+  const opponents: { id: string; name: string }[] = [];
+  if (Array.isArray(raw.opponents)) {
+    for (const opponentValue of raw.opponents) {
+      if (!opponentValue || typeof opponentValue !== "object") continue;
+      const opponent = opponentValue as Record<string, unknown>;
+      opponents.push({
         id: typeof opponent.id === "string" ? opponent.id : "",
         name: typeof opponent.name === "string" ? opponent.name : "Unnamed opponent"
-      }))
-    : [];
+      });
+    }
+  }
 
-  const competitions = Array.isArray(raw.competitions)
-    ? raw.competitions.filter((competition): competition is Record<string, unknown> => !!competition && typeof competition === "object").map((competition) => ({
+  const competitions: { id: string; name: string }[] = [];
+  if (Array.isArray(raw.competitions)) {
+    for (const competitionValue of raw.competitions) {
+      if (!competitionValue || typeof competitionValue !== "object") continue;
+      const competition = competitionValue as Record<string, unknown>;
+      competitions.push({
         id: typeof competition.id === "string" ? competition.id : "",
         name: typeof competition.name === "string" ? competition.name : "Unnamed competition"
-      }))
-    : [];
+      });
+    }
+  }
 
   return {
     id: typeof raw.id === "string" ? raw.id : undefined,
