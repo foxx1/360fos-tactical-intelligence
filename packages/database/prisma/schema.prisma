@@ -12,6 +12,7 @@ enum MatchStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  @@map("match_status")
 }
 
 enum TacticalPhase {
@@ -20,16 +21,19 @@ enum TacticalPhase {
   ATTACKING_TRANSITION
   DEFENSIVE_TRANSITION
   SET_PIECE
+  @@map("tactical_phase")
 }
 
 enum AnalysisType {
   OUR_TEAM
   OPPONENT
+  @@map("analysis_type")
 }
 
 enum FindingType {
   STRENGTH
   WEAKNESS
+  @@map("finding_type")
 }
 
 enum PriorityLevel {
@@ -37,17 +41,20 @@ enum PriorityLevel {
   HIGH
   MEDIUM
   LOW
+  @@map("priority_level")
 }
 
 enum GapType {
   OPPORTUNITY
   THREAT
+  @@map("gap_type")
 }
 
 enum TrainingSessionStatus {
   DRAFT
   READY
   COMPLETED
+  @@map("training_session_status")
 }
 
 enum TrainingExercisePhase {
@@ -56,89 +63,96 @@ enum TrainingExercisePhase {
   MAIN_GAME
   CONDITIONED_GAME
   FINAL_GAME
+  @@map("training_exercise_phase")
 }
 
 model Organization {
   id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  name String @map("name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   teams     Team[]
   users     OrganizationUser[]
   competitions Competition[]
   opponents Opponent[]
+  @@map("organizations")
 }
 
 model OrganizationUser {
   id             String       @id @default(uuid())
-  organizationId String
-  userId         String
-  role           String
+  organizationId String @map("organization_id")
+  userId String @map("user_id")
+  role String @map("role")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId])
   @@index([userId])
+  @@map("organization_users")
 }
 
 model Team {
   id             String       @id @default(uuid())
-  organizationId String
-  name           String
+  organizationId String @map("organization_id")
+  name String @map("name")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   seasons        Season[]
   matches        Match[]      @relation("OurTeamMatches")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   @@index([organizationId])
+  @@map("teams")
 }
 
 model Season {
   id        String   @id @default(uuid())
-  teamId    String
-  name      String
+  teamId String @map("team_id")
+  name String @map("name")
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   matches   Match[]
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([teamId, name])
+  @@map("seasons")
 }
 
 model Competition {
   id             String       @id @default(uuid())
-  organizationId String
-  name           String
+  organizationId String @map("organization_id")
+  name String @map("name")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   matches        Match[]
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([organizationId, name])
+  @@map("competitions")
 }
 
 model Opponent {
   id             String       @id @default(uuid())
-  organizationId String
-  name           String
+  organizationId String @map("organization_id")
+  name String @map("name")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   matches        Match[]      @relation("OpponentMatches")
-  createdAt      DateTime     @default(now())
+  createdAt DateTime     @default(now()) @map("created_at")
 
   @@unique([organizationId, name])
+  @@map("opponents")
 }
 
 model Match {
   id            String      @id @default(uuid())
-  teamId        String
-  seasonId      String?
-  competitionId String?
-  opponentId    String
-  matchDate     DateTime
-  venue         String?
-  isHome        Boolean     @default(true)
-  status        MatchStatus @default(PLANNED)
-  ourScore      Int?
-  opponentScore Int?
-  formation     String?
+  teamId String @map("team_id")
+  seasonId String? @map("season_id")
+  competitionId String? @map("competition_id")
+  opponentId String @map("opponent_id")
+  matchDate DateTime @map("match_date")
+  venue String? @map("venue")
+  isHome Boolean     @default(true) @map("is_home")
+  status MatchStatus @default(PLANNED) @map("status")
+  ourScore Int? @map("our_score")
+  opponentScore Int? @map("opponent_score")
+  formation String? @map("formation")
 
   team        Team         @relation("OurTeamMatches", fields: [teamId], references: [id], onDelete: Cascade)
   season      Season?      @relation(fields: [seasonId], references: [id], onDelete: SetNull)
@@ -150,242 +164,254 @@ model Match {
   priorities  TrainingPriority[]
   trainingSessions TrainingSession[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([teamId, matchDate])
   @@index([opponentId, matchDate])
+  @@map("matches")
 }
 
 model Analysis {
   id          String       @id @default(uuid())
-  matchId     String
-  type        AnalysisType
-  phase       TacticalPhase
-  subPhase    String
-  behaviour   String
-  evidence    String?
-  frequency   Int          @default(1)
-  successPct  Float?
-  impact      Int?
-  findingType FindingType?
-  priority    PriorityLevel?
-  videoRef    String?
+  matchId String @map("match_id")
+  type AnalysisType @map("type")
+  phase TacticalPhase @map("phase")
+  subPhase String @map("sub_phase")
+  behaviour String @map("behaviour")
+  evidence String? @map("evidence")
+  frequency Int          @default(1) @map("frequency")
+  successPct Float? @map("success_pct")
+  impact Int? @map("impact")
+  findingType FindingType? @map("finding_type")
+  priority PriorityLevel? @map("priority")
+  videoRef String? @map("video_ref")
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([matchId, type, phase])
+  @@map("analyses")
 }
 
 model Evidence {
   id        String        @id @default(uuid())
-  matchId   String
-  minute    Float
-  phase     TacticalPhase
-  event     String
-  zone      String?
-  impact    Int?
-  note      String
-  videoRef      String?
-  analysisType  AnalysisType @default(OPPONENT)
+  matchId String @map("match_id")
+  minute Float @map("minute")
+  phase TacticalPhase @map("phase")
+  event String @map("event")
+  zone String? @map("zone")
+  impact Int? @map("impact")
+  note String @map("note")
+  videoRef String? @map("video_ref")
+  analysisType AnalysisType @default(OPPONENT) @map("analysis_type")
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([matchId, minute])
+  @@map("evidence")
 }
 
 model TacticalGap {
   id                 String       @id @default(uuid())
-  matchId            String
-  type               GapType
-  ourStrength        String?
-  ourWeakness        String?
-  opponentStrength   String?
-  opponentWeakness   String?
-  interaction        String
-  opportunity        String?
-  threat             String?
-  tacticalPrinciple  String?
-  playerBehaviour    String?
-  teamBehaviour      String?
-  trainingObjective  String?
-  matchObjective     String?
-  priority           PriorityLevel
-  status             String       @default("OPEN")
+  matchId String @map("match_id")
+  type GapType @map("type")
+  ourStrength String? @map("our_strength")
+  ourWeakness String? @map("our_weakness")
+  opponentStrength String? @map("opponent_strength")
+  opponentWeakness String? @map("opponent_weakness")
+  interaction String @map("interaction")
+  opportunity String? @map("opportunity")
+  threat String? @map("threat")
+  tacticalPrinciple String? @map("tactical_principle")
+  playerBehaviour String? @map("player_behaviour")
+  teamBehaviour String? @map("team_behaviour")
+  trainingObjective String? @map("training_objective")
+  matchObjective String? @map("match_objective")
+  priority PriorityLevel @map("priority")
+  status String       @default("OPEN") @map("status")
   exercises          TrainingExercise[]
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([matchId, priority])
+  @@map("tactical_gaps")
 }
 
 model TrainingPriority {
   id              String        @id @default(uuid())
-  matchId         String
-  rank            Int?
-  priority        PriorityLevel
-  problem         String
-  evidence        String?
-  diagnosis       String?
-  objective       String
-  exerciseType    String?
-  constraint      String?
-  players         String?
-  durationMinutes Int?
-  intensity       String?
-  successKpi      String?
-  matchObjective  String?
-  sessionDay      String?
+  matchId String @map("match_id")
+  rank Int? @map("rank")
+  priority PriorityLevel @map("priority")
+  problem String @map("problem")
+  evidence String? @map("evidence")
+  diagnosis String? @map("diagnosis")
+  objective String @map("objective")
+  exerciseType String? @map("exercise_type")
+  constraint String? @map("constraint")
+  players String? @map("players")
+  durationMinutes Int? @map("duration_minutes")
+  intensity String? @map("intensity")
+  successKpi String? @map("success_kpi")
+  matchObjective String? @map("match_objective")
+  sessionDay String? @map("session_day")
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
   exercises TrainingExercise[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([matchId, priority])
+  @@map("training_priorities")
 }
 
 
 model TrainingSession {
   id                   String                @id @default(uuid())
-  matchId              String
-  title                String
-  sessionDay           String?
-  sessionDate          DateTime?
-  totalDurationMinutes Int?
-  intensity            String?
-  objective            String
-  matchObjective       String?
-  status               TrainingSessionStatus @default(DRAFT)
-  coachNotes           String?
+  matchId String @map("match_id")
+  title String @map("title")
+  sessionDay String? @map("session_day")
+  sessionDate DateTime? @map("session_date")
+  totalDurationMinutes Int? @map("total_duration_minutes")
+  intensity String? @map("intensity")
+  objective String @map("objective")
+  matchObjective String? @map("match_objective")
+  status TrainingSessionStatus @default(DRAFT) @map("status")
+  coachNotes String? @map("coach_notes")
   match                Match                 @relation(fields: [matchId], references: [id], onDelete: Cascade)
   exercises            TrainingExercise[]
   runtime             TrainingSessionRuntime?
   assessment         TrainingSessionAssessment?
   behaviourResults   TrainingBehaviourResult[]
   learningActions    TrainingLearningAction[]
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
 
   @@index([matchId, sessionDate])
+  @@map("training_sessions")
 }
 
 model TrainingExercise {
   id                 String                @id @default(uuid())
-  sessionId          String
-  trainingPriorityId String?
-  tacticalGapId      String?
-  exerciseOrder      Int
-  phase              TrainingExercisePhase
-  title              String
-  objective          String
-  organization       String?
-  durationMinutes    Int?
-  players            String?
-  constraints        String?
-  coachingPoints     String?
-  successKpi         String?
-  progression        String?
-  regression         String?
-  matchBehaviour     String?
+  sessionId String @map("session_id")
+  trainingPriorityId String? @map("training_priority_id")
+  tacticalGapId String? @map("tactical_gap_id")
+  exerciseOrder Int @map("exercise_order")
+  phase TrainingExercisePhase @map("phase")
+  title String @map("title")
+  objective String @map("objective")
+  organization String? @map("organization")
+  durationMinutes Int? @map("duration_minutes")
+  players String? @map("players")
+  constraints String? @map("constraints")
+  coachingPoints String? @map("coaching_points")
+  successKpi String? @map("success_kpi")
+  progression String? @map("progression")
+  regression String? @map("regression")
+  matchBehaviour String? @map("match_behaviour")
   session            TrainingSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   runtime            TrainingSessionRuntime[]
   kpiEvents          TrainingKpiEvent[]
   behaviourResults   TrainingBehaviourResult[]
   trainingPriority   TrainingPriority?     @relation(fields: [trainingPriorityId], references: [id], onDelete: SetNull)
   tacticalGap        TacticalGap?          @relation(fields: [tacticalGapId], references: [id], onDelete: SetNull)
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
 
   @@index([sessionId, exerciseOrder])
   @@index([trainingPriorityId])
   @@index([tacticalGapId])
+  @@map("training_exercises")
 }
 
 
 model TrainingSessionAssessment {
   id              String          @id @default(uuid())
-  sessionId       String          @unique
-  overallScore    Float?
-  transferRating  String?
-  coachAssessment String?
-  strengths       String?
-  issues          String?
-  nextAction      String?
-  matchReadiness  String?
+  sessionId String          @unique @map("session_id")
+  overallScore Float? @map("overall_score")
+  transferRating String? @map("transfer_rating")
+  coachAssessment String? @map("coach_assessment")
+  strengths String? @map("strengths")
+  issues String? @map("issues")
+  nextAction String? @map("next_action")
+  matchReadiness String? @map("match_readiness")
   session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  @@map("training_session_assessments")
 }
 
 model TrainingBehaviourResult {
   id             String          @id @default(uuid())
-  sessionId      String
-  exerciseId     String?
-  behaviour      String
-  targetKpi      String?
-  successfulReps Int             @default(0)
-  failedReps     Int             @default(0)
-  successRate    Float?
-  coachRating    Float?
-  observation    String?
+  sessionId String @map("session_id")
+  exerciseId String? @map("exercise_id")
+  behaviour String @map("behaviour")
+  targetKpi String? @map("target_kpi")
+  successfulReps Int             @default(0) @map("successful_reps")
+  failedReps Int             @default(0) @map("failed_reps")
+  successRate Float? @map("success_rate")
+  coachRating Float? @map("coach_rating")
+  observation String? @map("observation")
   session        TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   exercise       TrainingExercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
 
   @@index([sessionId])
   @@index([exerciseId])
+  @@map("training_behaviour_results")
 }
 
 model TrainingLearningAction {
   id               String          @id @default(uuid())
-  sessionId        String
-  sourcePriorityId String?
-  sourceGapId      String?
-  result           String
-  recommendation   String
+  sessionId String @map("session_id")
+  sourcePriorityId String? @map("source_priority_id")
+  sourceGapId String? @map("source_gap_id")
+  result String @map("result")
+  recommendation String @map("recommendation")
   session          TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  createdAt        DateTime        @default(now())
+  createdAt DateTime        @default(now()) @map("created_at")
 
   @@index([sessionId])
   @@index([sourcePriorityId])
   @@index([sourceGapId])
+  @@map("training_learning_actions")
 }
 
 model TrainingSessionRuntime {
   id                 String              @id @default(uuid())
-  sessionId          String              @unique
-  currentExerciseId  String?
-  startedAt          DateTime?
-  pausedAt           DateTime?
-  elapsedSeconds     Int                 @default(0)
-  successfulReps     Int                 @default(0)
-  failedReps         Int                 @default(0)
-  coachNotes         String?
+  sessionId String              @unique @map("session_id")
+  currentExerciseId String? @map("current_exercise_id")
+  startedAt DateTime? @map("started_at")
+  pausedAt DateTime? @map("paused_at")
+  elapsedSeconds Int                 @default(0) @map("elapsed_seconds")
+  successfulReps Int                 @default(0) @map("successful_reps")
+  failedReps Int                 @default(0) @map("failed_reps")
+  coachNotes String? @map("coach_notes")
   session            TrainingSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   currentExercise    TrainingExercise?   @relation(fields: [currentExerciseId], references: [id], onDelete: SetNull)
   kpiEvents          TrainingKpiEvent[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  @@map("training_session_runtime")
 }
 
 model TrainingKpiEvent {
   id          String               @id @default(uuid())
-  runtimeId   String
-  exerciseId  String?
-  result      String
-  value       Int?
-  note        String?
-  minute      Int?
+  runtimeId String @map("runtime_id")
+  exerciseId String? @map("exercise_id")
+  result String @map("result")
+  value Int? @map("value")
+  note String? @map("note")
+  minute Int? @map("minute")
   runtime     TrainingSessionRuntime @relation(fields: [runtimeId], references: [id], onDelete: Cascade)
   exercise    TrainingExercise?      @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
-  createdAt   DateTime             @default(now())
+  createdAt DateTime             @default(now()) @map("created_at")
 
   @@index([runtimeId, createdAt])
+  @@map("training_kpi_events")
 }
