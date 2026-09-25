@@ -1,29 +1,32 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+type Team = {
+  id: string;
+  name: string;
+  seasons: { id: string; name: string }[];
+};
 
 type Workspace = {
   id?: string;
   name: string;
-  teams: { id: string; name: string; seasons: { id: string; name: string }[] }[];
+  teams: Team[];
   opponents: { id: string; name: string }[];
-  competitions?: { id: string; name: string }[];
+  competitions: { id: string; name: string }[];
 };
 
 function normalizeWorkspace(value: unknown): Workspace | null {
   if (!value || typeof value !== "object") return null;
 
   const raw = value as Record<string, unknown>;
+  const teams: Team[] = [];
 
-  const teams: Workspace["teams"] = [];
   if (Array.isArray(raw.teams)) {
     for (const teamValue of raw.teams) {
       if (!teamValue || typeof teamValue !== "object") continue;
       const team = teamValue as Record<string, unknown>;
-
       const seasons: { id: string; name: string }[] = [];
+
       if (Array.isArray(team.seasons)) {
         for (const seasonValue of team.seasons) {
           if (!seasonValue || typeof seasonValue !== "object") continue;
@@ -76,100 +79,51 @@ function normalizeWorkspace(value: unknown): Workspace | null {
   };
 }
 
-export default function HomePage() {
-  const router = useRouter();
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+async function getWorkspace(): Promise<{ email: string; workspace: Workspace } | null> {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  useEffect(() => {
-    let active = true;
+  if (!session) return null;
 
-    async function load() {
-      try {
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
-        if (!session) {
-          router.replace("/login");
-          return;
-        }
+  const response = await fetch(apiUrl + "/organizations/me", {
+    headers: {
+      Authorization: "Bearer " + session.access_token,
+      Accept: "application/json"
+    },
+    cache: "no-store"
+  });
 
-        if (active) setEmail(session.user.email ?? "");
-
-        const response = await fetch(
-          (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1") + "/organizations/me",
-          {
-            headers: {
-              Authorization: "Bearer " + session.access_token,
-              Accept: "application/json"
-            },
-            cache: "no-store"
-          }
-        );
-
-        const result: unknown = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          throw new Error("Unable to load workspace.");
-        }
-
-        const payload =
-          result && typeof result === "object" && "data" in result
-            ? (result as { data?: unknown }).data
-            : null;
-
-        const normalized = normalizeWorkspace(payload);
-
-        if (!normalized) {
-          router.replace("/onboarding");
-          return;
-        }
-
-        if (active) setWorkspace(normalized);
-      } catch (loadError) {
-        if (active) {
-          setError(loadError instanceof Error ? loadError.message : "Unable to load workspace.");
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    load();
-
-    return () => {
-      active = false;
-    };
-  }, [router]);
-
-  async function signOut() {
-    await createClient().auth.signOut();
-    router.replace("/login");
+  if (!response.ok) {
+    throw new Error("Unable to load workspace.");
   }
 
-  if (loading) {
-    return <main className="app-shell"><p>Loading Tactical Intelligence...</p></main>;
-  }
+  const result: unknown = await response.json().catch(() => null);
+  const payload =
+    result && typeof result === "object" && "data" in result
+      ? (result as { data?: unknown }).data
+      : null;
 
-  if (error) {
-    return (
-      <main className="app-shell">
-        <section className="hero">
-          <span className="status">WORKSPACE ERROR</span>
-          <h2>Unable to load workspace</h2>
-          <p>{error}</p>
-          <button className="ghost-button" onClick={() => window.location.reload()}>Retry</button>
-        </section>
-      </main>
-    );
-  }
-
+  const workspace = normalizeWorkspace(payload);
   if (!workspace) return null;
 
+  return {
+    email: session.user.email ?? "",
+    workspace
+  };
+}
+
+export default async function HomePage() {
+  const result = await getWorkspace();
+
+  if (!result) {
+    redirect("/login");
+  }
+
+  const { email, workspace } = result;
   const primaryTeam = workspace.teams[0];
-  const seasonCount = primaryTeam?.seasons?.length ?? 0;
+  const seasonCount = primaryTeam?.seasons.length ?? 0;
 
   return (
     <main className="app-shell">
@@ -180,7 +134,9 @@ export default function HomePage() {
         </div>
         <div className="topbar-actions">
           <span>{email}</span>
-          <button className="ghost-button" onClick={signOut}>Sign out</button>
+          <form action="/auth/signout" method="post">
+            <button className="ghost-button" type="submit">Sign out</button>
+          </form>
         </div>
       </header>
 
