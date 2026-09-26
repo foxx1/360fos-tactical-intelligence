@@ -9,6 +9,15 @@ type Team = { id: string; name: string; seasons: { id: string; name: string }[] 
 type Opponent = { id: string; name: string };
 type Competition = { id: string; name: string };
 
+function asArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object" && "data" in value) {
+    const nested = (value as { data?: unknown }).data;
+    return Array.isArray(nested) ? (nested as T[]) : [];
+  }
+  return [];
+}
+
 export default function NewMatchPage() {
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
@@ -17,23 +26,67 @@ export default function NewMatchPage() {
   const [form, setForm] = useState({ teamId: "", seasonId: "", opponentId: "", competitionId: "", matchDate: "", venue: "", isHome: true, formation: "4-2-3-1" });
   const [newCompetition, setNewCompetition] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace("/login"); return; }
-      const headers = { Authorization: "Bearer " + session.access_token };
-      const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-      const [teamRes, oppRes, compRes] = await Promise.all([
-        fetch(base + "/teams", { headers }),
-        fetch(base + "/opponents", { headers }),
-        fetch(base + "/competitions", { headers }),
-      ]);
-      const [teamJson, oppJson, compJson] = await Promise.all([teamRes.json(), oppRes.json(), compRes.json()]);
-      setTeams(teamJson.data ?? []); setOpponents(oppJson.data ?? []); setCompetitions(compJson.data ?? []);
-      if (teamJson.data?.[0]) setForm(f => ({ ...f, teamId: teamJson.data[0].id, seasonId: teamJson.data[0].seasons?.[0]?.id ?? "" }));
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { router.replace("/login"); return; }
+
+        const headers = { Authorization: "Bearer " + session.access_token, Accept: "application/json" };
+        const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+        const [teamRes, oppRes, compRes] = await Promise.all([
+          fetch(base + "/teams", { headers }),
+          fetch(base + "/opponents", { headers }),
+          fetch(base + "/competitions", { headers }),
+        ]);
+
+        const [teamJson, oppJson, compJson]: unknown[] = await Promise.all([
+          teamRes.json().catch(() => null),
+          oppRes.json().catch(() => null),
+          compRes.json().catch(() => null),
+        ]);
+
+        if (!teamRes.ok || !oppRes.ok || !compRes.ok) {
+          throw new Error("Unable to load match setup data.");
+        }
+
+        const nextTeams = asArray<Team>(
+          teamJson && typeof teamJson === "object" && "data" in teamJson
+            ? (teamJson as { data?: unknown }).data
+            : teamJson
+        );
+        const nextOpponents = asArray<Opponent>(
+          oppJson && typeof oppJson === "object" && "data" in oppJson
+            ? (oppJson as { data?: unknown }).data
+            : oppJson
+        );
+        const nextCompetitions = asArray<Competition>(
+          compJson && typeof compJson === "object" && "data" in compJson
+            ? (compJson as { data?: unknown }).data
+            : compJson
+        );
+
+        setTeams(nextTeams);
+        setOpponents(nextOpponents);
+        setCompetitions(nextCompetitions);
+
+        const firstTeam = nextTeams[0];
+        if (firstTeam) {
+          setForm(f => ({
+            ...f,
+            teamId: firstTeam.id,
+            seasonId: Array.isArray(firstTeam.seasons) ? firstTeam.seasons[0]?.id ?? "" : ""
+          }));
+        }
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load match setup data.");
+      } finally {
+        setLoadingData(false);
+      }
     })();
   }, [router]);
 
@@ -41,23 +94,48 @@ export default function NewMatchPage() {
 
   async function addCompetition() {
     if (!newCompetition.trim()) return;
-    const supabase = createClient(); const { data: { session } } = await supabase.auth.getSession();
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
     const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-    const res = await fetch(base + "/competitions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token }, body: JSON.stringify({ name: newCompetition.trim() }) });
-    const json = await res.json();
-    if (res.ok) { setCompetitions(c => [...c.filter(x => x.id !== json.data.id), json.data]); setForm(f => ({ ...f, competitionId: json.data.id })); setNewCompetition(""); }
+    const res = await fetch(base + "/competitions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
+      body: JSON.stringify({ name: newCompetition.trim() })
+    });
+    const json: unknown = await res.json().catch(() => null);
+    const created =
+      json && typeof json === "object" && "data" in json
+        ? (json as { data?: unknown }).data
+        : null;
+
+    if (res.ok && created && typeof created === "object") {
+      setCompetitions(current => {
+        const safe = Array.isArray(current) ? current : [];
+        return [...safe.filter(x => x.id !== (created as Competition).id), created as Competition];
+      });
+      setForm(f => ({ ...f, competitionId: (created as Competition).id }));
+      setNewCompetition("");
+    }
   }
 
   async function submit(e: FormEvent) {
-    e.preventDefault(); setLoading(true); setError("");
-    const supabase = createClient(); const { data: { session } } = await supabase.auth.getSession();
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) { router.replace("/login"); return; }
     const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-    const res = await fetch(base + "/matches", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token }, body: JSON.stringify({ ...form, seasonId: form.seasonId || undefined, competitionId: form.competitionId || undefined }) });
-    const json = await res.json();
-    if (!res.ok) setError(json.message ?? "Unable to create match.");
-    else router.replace("/matches/" + json.data.id);
+    const res = await fetch(base + "/matches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
+      body: JSON.stringify({ ...form, seasonId: form.seasonId || undefined, competitionId: form.competitionId || undefined })
+    });
+    const json: any = await res.json().catch(() => null);
+    if (!res.ok) setError(json?.message ?? "Unable to create match.");
+    else if (json?.data?.id) router.replace("/matches/" + json.data.id);
+    else setError("Match was created but no match ID was returned.");
     setLoading(false);
   }
 
