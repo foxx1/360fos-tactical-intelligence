@@ -54,11 +54,24 @@ export default function NewMatchPage() {
           throw new Error("Unable to load match setup data.");
         }
 
-        const nextTeams = asArray<Team>(
+        const rawTeams = asArray<unknown>(
           teamJson && typeof teamJson === "object" && "data" in teamJson
             ? (teamJson as { data?: unknown }).data
             : teamJson
         );
+
+        const nextTeams: Team[] = rawTeams
+          .filter((value): value is Record<string, unknown> => !!value && typeof value === "object")
+          .map(value => ({
+            id: typeof value.id === "string" ? value.id : "",
+            name: typeof value.name === "string" ? value.name : "Unnamed team",
+            seasons: asArray<unknown>(value.seasons)
+              .filter((season): season is Record<string, unknown> => !!season && typeof season === "object")
+              .map(season => ({
+                id: typeof season.id === "string" ? season.id : "",
+                name: typeof season.name === "string" ? season.name : "Unnamed season"
+              }))
+          }));
         const nextOpponents = asArray<Opponent>(
           oppJson && typeof oppJson === "object" && "data" in oppJson
             ? (oppJson as { data?: unknown }).data
