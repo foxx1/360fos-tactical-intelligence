@@ -258,7 +258,21 @@ export default function NewMatchPage() {
               </div>
             </label>
             <label>Season<select value={form.seasonId} onChange={e=>setForm({...form,seasonId:e.target.value})}><option value="">Select season</option>{teamSeasons.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-            <label>Competition<div className="inline-control"><select value={form.competitionId} onChange={e=>setForm({...form,competitionId:e.target.value})}><option value="">Select competition</option>{safeCompetitions.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select><button type="button" className="icon-action" onClick={addCompetition}>+</button></div></label>
+            <label>Competition
+              <div className="inline-control">
+                <select value={form.competitionId} onChange={e=>setForm({...form,competitionId:e.target.value})}>
+                  <option value="">Select competition</option>
+                  {safeCompetitions.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button type="button" className="icon-action" onClick={() => document.getElementById("new-competition")?.focus()}>+</button>
+              </div>
+              <div className="inline-create">
+                <input id="new-competition" value={newCompetition} onChange={e=>setNewCompetition(e.target.value)} placeholder="Add competition name"/>
+                <button type="button" className="secondary-action" onClick={addCompetition} disabled={!newCompetition.trim()}>
+                  Add
+                </button>
+              </div>
+            </label>
             <label>Match Date<input required type="datetime-local" value={form.matchDate} onChange={e=>setForm({...form,matchDate:e.target.value})}/></label>
             <label>Venue<input value={form.venue} onChange={e=>setForm({...form,venue:e.target.value})} placeholder="Khalifa Sports City Stadium"/></label>
             <label>Home / Away<select value={form.isHome ? "home" : "away"} onChange={e=>setForm({...form,isHome:e.target.value==="home"})}><option value="home">Home</option><option value="away">Away</option></select></label>
