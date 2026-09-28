@@ -91,8 +91,31 @@ export default function IntelligenceMatrixPage() {
       router.replace("/matches");
       return;
     }
-    const json = await response.json();
-    setData(json.data);
+    const json: unknown = await response.json().catch(() => null);
+    const raw = json && typeof json === "object" && "data" in json ? (json as { data?: unknown }).data : null;
+    const source = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+    const array = <T,>(value: unknown): T[] => Array.isArray(value) ? value as T[] : [];
+    setData({
+      ourStrengths: array<Finding>(source.ourStrengths),
+      ourWeaknesses: array<Finding>(source.ourWeaknesses),
+      opponentStrengths: array<Finding>(source.opponentStrengths),
+      opponentWeaknesses: array<Finding>(source.opponentWeaknesses),
+      opportunities: array<Candidate>(source.opportunities),
+      threats: array<Candidate>(source.threats),
+      quadrants: {
+        strengthVsStrength: array<Candidate>(
+          source.quadrants && typeof source.quadrants === "object"
+            ? (source.quadrants as Record<string, unknown>).strengthVsStrength
+            : []
+        ),
+        weaknessVsWeakness: array<Candidate>(
+          source.quadrants && typeof source.quadrants === "object"
+            ? (source.quadrants as Record<string, unknown>).weaknessVsWeakness
+            : []
+        )
+      },
+      gaps: array<Gap>(source.gaps)
+    });
     setLoading(false);
   }
 
