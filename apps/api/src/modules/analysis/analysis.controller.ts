@@ -7,12 +7,12 @@ export class AnalysisController {
   constructor(private readonly service: AnalysisService) {}
 
   @Get()
-  findByMatch(@Param("matchId") matchId: string) {
-    return { success: true, data: this.service.findByMatch(matchId) };
+  async findByMatch(@Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.findByMatch(matchId) };
   }
 
   @Post()
-  create(@Param("matchId") matchId: string, @Body() dto: CreateAnalysisDto) {
-    return { success: true, data: this.service.create({ ...dto, matchId }) };
+  async create(@Param("matchId") matchId: string, @Body() dto: CreateAnalysisDto) {
+    return { success: true, data: await this.service.create({ ...dto, matchId }) };
   }
 }
