@@ -26,7 +26,13 @@ export default function SessionPerformanceReport(){
       } else setReport(null);
     }setLoading(false)}
  useEffect(()=>{load()},[params.id]);
- async function generate(){if(!report)return;const s=await auth();if(!s)return;setGenerating(true);const r=await fetch(baseUrl()+"/matches/"+params.id+"/training-sessions/"+report.session.id+"/report/generate",{method:"POST",headers:{Authorization:"Bearer "+s.access_token}});const j=await r.json();if(!r.ok)setError(j.message??"Unable to generate report.");else setReport(j.data);setGenerating(false)}
+ async function generate(){if(!report)return;const s=await auth();if(!s)return;setGenerating(true);const r=await fetch(baseUrl()+"/matches/"+params.id+"/training-sessions/"+report.session.id+"/report/generate",{method:"POST",headers:{Authorization:"Bearer "+s.access_token}});const j=await r.json();if(!r.ok)setError(j.message??"Unable to generate report.");else {
+      const value=j&&typeof j==="object"&&"data" in j?(j as {data?:unknown}).data:null;
+      if(value&&typeof value==="object"){
+        const v=value as any;
+        setReport({...v,behaviours:Array.isArray(v.behaviours)?v.behaviours:[],actions:Array.isArray(v.actions)?v.actions:[],session:v.session&&typeof v.session==="object"?{...v.session,exercises:Array.isArray(v.session.exercises)?v.session.exercises:[]}:v.session});
+      } else setError("Learning report response was invalid.");
+    }setGenerating(false)}
  if(loading)return <main className="fos-loading">Loading Session Performance Report...</main>;
  const s=report?.summary;const a=report?.assessment;
  return <main className="fos-shell"><aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/">⚽ <span>Training</span></Link><Link href="/">▤ <span>Reports</span></Link></nav><div className="sidebar-footer">360FOS<br/><small>Turn Analysis into Performance</small></div></aside>
