@@ -25,7 +25,7 @@ export default function EvidencePage() {
   const [form,setForm]=useState({analysisType:"OPPONENT",minute:"0",phase:"OUT_OF_POSSESSION",event:"",zone:"",impact:"3",note:"",videoRef:""});
 
   async function session(){ const {data:{session}}=await createClient().auth.getSession(); if(!session){router.replace("/login");return null} return session; }
-  async function load(){ const s=await session(); if(!s)return; const base=process.env.NEXT_PUBLIC_API_URL??"http://localhost:4000/api/v1"; const r=await fetch(base+"/matches/"+params.id+"/evidence",{headers:{Authorization:"Bearer "+s.access_token}}); if(r.ok){const j=await r.json();setEvidence(j.data??[])}else router.replace("/matches"); setLoading(false); }
+  async function load(){ const s=await session(); if(!s)return; const base=process.env.NEXT_PUBLIC_API_URL??"http://localhost:4000/api/v1"; const r=await fetch(base+"/matches/"+params.id+"/evidence",{headers:{Authorization:"Bearer "+s.access_token}}); if(r.ok){const j: unknown=await r.json().catch(()=>null);const raw=j&&typeof j==="object"&&"data" in j?(j as {data?:unknown}).data:j;setEvidence(Array.isArray(raw)?raw as Evidence[]:[])}else router.replace("/matches"); setLoading(false); }
   useEffect(()=>{load()},[params.id]);
 
   async function submit(e:FormEvent){
