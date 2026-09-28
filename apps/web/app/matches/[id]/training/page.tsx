@@ -36,7 +36,8 @@ export default function TrainingPlannerPage() {
     });
     if (!res.ok) { router.replace("/matches"); return; }
     const json = await res.json();
-    setPriorities(json.data ?? []);
+    const raw = json && typeof json === "object" && "data" in json ? json.data : json;
+    setPriorities(Array.isArray(raw) ? raw as Priority[] : []);
     setLoading(false);
   }
 
