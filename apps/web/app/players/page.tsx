@@ -1,0 +1,5 @@
+import Link from "next/link";
+
+export default function PlayersPage() {
+  return <main className="fos-shell"><aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link href="/matches">▣ <span>Matches</span></Link><Link href="/opponents">◌ <span>Opponents</span></Link><Link href="/teams">◉ <span>Teams</span></Link><Link className="active" href="/players">♙ <span>Players</span></Link><Link href="/tactical-intelligence">✦ <span>Tactical Intelligence</span></Link><Link href="/training">⚽ <span>Training</span></Link><Link href="/reports">▤ <span>Reports</span></Link></nav></aside><section className="fos-main"><div className="page-heading"><div><div className="crumb">360FOS / PLAYERS</div><h1>Players</h1><p>Player profiles, performance and tactical context.</p></div></div><div className="empty-state"><div className="empty-icon">♙</div><h2>Player Intelligence</h2><p>Player-level intelligence will connect here with squad performance and match evidence.</p></div></section></main>;
+}
