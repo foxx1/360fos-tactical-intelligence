@@ -47,7 +47,7 @@ export default function EvidencePage() {
   }
 
   return <main className="fos-shell">
-    <aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/">◌ <span>Opponents</span></Link><Link href="/">⚽ <span>Training</span></Link></nav></aside>
+    <aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/opponents">◌ <span>Opponents</span></Link><Link href="/training">⚽ <span>Training</span></Link></nav></aside>
     <section className="fos-main">
       <header className="fos-topbar"><div className="fos-search fake-search">⌕ Search match evidence...</div><div className="fos-user">Evidence Capture <span>•</span> 360FOS</div></header>
       <div className="page-heading"><div><div className="crumb">MATCH / EVIDENCE</div><h1>Evidence Capture Engine</h1><p>Capture match moments once. Convert them into analysis, tactical gaps and training priorities.</p></div><div className="heading-actions"><Link className="secondary-action" href={"/matches/"+params.id}>Workspace</Link><button className="primary-action" onClick={generate} disabled={generating}>{generating?"Generating...":"Generate Intelligence ✦"}</button></div></div>
