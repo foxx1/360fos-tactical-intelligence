@@ -28,7 +28,10 @@ export default function TrainingSessionBuilderPage(){
     const s=await auth(); if(!s)return;
     const res=await fetch(baseUrl()+"/matches/"+params.id+"/training-sessions",{headers:{Authorization:"Bearer "+s.access_token}});
     if(!res.ok){setError("Unable to load training sessions.");setLoading(false);return;}
-    const json=await res.json(); setSession((json.data??[])[0]??null); setLoading(false);
+    const json=await res.json().catch(()=>null);
+    const raw=json&&typeof json==="object"&&"data" in json?(json as {data?:unknown}).data:json;
+    const sessions=Array.isArray(raw)?raw as TrainingSession[]:[];
+    setSession(sessions[0]??null); setLoading(false);
   }
   useEffect(()=>{load()},[params.id]);
   async function generate(){
