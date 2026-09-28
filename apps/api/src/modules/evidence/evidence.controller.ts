@@ -6,11 +6,11 @@ import { EvidenceService } from "./evidence.service";
 export class EvidenceController {
   constructor(private readonly service: EvidenceService) {}
   @Get()
-  findByMatch(@Req() req: any, @Param("matchId") matchId: string) {
-    return { success: true, data: this.service.findByMatch(req.user.id, matchId) };
+  async findByMatch(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.findByMatch(req.user.id, matchId) };
   }
   @Post()
-  create(@Req() req: any, @Param("matchId") matchId: string, @Body() dto: CreateEvidenceDto) {
-    return { success: true, data: this.service.create(req.user.id, matchId, dto) };
+  async create(@Req() req: any, @Param("matchId") matchId: string, @Body() dto: CreateEvidenceDto) {
+    return { success: true, data: await this.service.create(req.user.id, matchId, dto) };
   }
 }
