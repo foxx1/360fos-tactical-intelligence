@@ -37,7 +37,13 @@ export default function TrainingSessionBuilderPage(){
   async function generate(){
     const s=await auth();if(!s)return;setGenerating(true);setError("");
     const res=await fetch(baseUrl()+"/matches/"+params.id+"/training-sessions/generate",{method:"POST",headers:{Authorization:"Bearer "+s.access_token}});
-    const json=await res.json(); if(!res.ok)setError(json.message??"Unable to generate session."); else setSession(json.data?.session??null);
+    const json=await res.json(); if(!res.ok)setError(json.message??"Unable to generate session."); else {
+      const candidate=json && typeof json==="object"&&"data" in json?(json as {data?:unknown}).data:null;
+      const generated=candidate&&typeof candidate==="object"&&"session" in candidate?(candidate as {session?:unknown}).session:null;
+      if (generated && typeof generated==="object") {
+        setSession({...generated as TrainingSession, exercises:Array.isArray((generated as TrainingSession).exercises)?(generated as TrainingSession).exercises:[]});
+      } else setSession(null);
+    }
     setGenerating(false);
   }
   if(loading)return <main className="fos-loading">Loading Training Session Builder...</main>;
