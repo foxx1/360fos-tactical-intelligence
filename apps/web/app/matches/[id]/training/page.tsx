@@ -68,9 +68,9 @@ export default function TrainingPlannerPage() {
         <nav>
           <Link href="/">⌂ <span>Dashboard</span></Link>
           <Link className="active" href="/matches">▣ <span>Matches</span></Link>
-          <Link href="/">◌ <span>Opponents</span></Link>
-          <Link href="/">⚽ <span>Training</span></Link>
-          <Link href="/">▤ <span>Reports</span></Link>
+          <Link href="/opponents">◌ <span>Opponents</span></Link>
+          <Link href="/training">⚽ <span>Training</span></Link>
+          <Link href="/reports">▤ <span>Reports</span></Link>
         </nav>
         <div className="sidebar-footer">360FOS<br/><small>Turn Analysis into Performance</small></div>
       </aside>
