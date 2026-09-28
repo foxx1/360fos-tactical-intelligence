@@ -13,15 +13,15 @@ export class CompetitionsController {
   constructor(private readonly competitionsService: CompetitionsService) {}
 
   @Get()
-  findAll(@Req() req: any) {
-    return { success: true, data: this.competitionsService.list(req.user.id) };
+  async findAll(@Req() req: any) {
+    return { success: true, data: await this.competitionsService.list(req.user.id) };
   }
 
   @Post()
-  create(@Req() req: any, @Body() dto: CreateCompetitionDto) {
+  async create(@Req() req: any, @Body() dto: CreateCompetitionDto) {
     return {
       success: true,
-      data: this.competitionsService.create(req.user.id, dto.name.trim()),
+      data: await this.competitionsService.create(req.user.id, dto.name.trim()),
     };
   }
 }
