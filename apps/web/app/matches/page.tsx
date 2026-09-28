@@ -48,12 +48,12 @@ export default function MatchesPage() {
         <nav>
           <Link href="/">⌂ <span>Dashboard</span></Link>
           <Link className="active" href="/matches">▣ <span>Matches</span></Link>
-          <Link href="/">◌ <span>Opponents</span></Link>
-          <Link href="/">◉ <span>Teams</span></Link>
-          <Link href="/">♙ <span>Players</span></Link>
-          <Link href="/">✦ <span>Tactical Intelligence</span></Link>
-          <Link href="/">⚽ <span>Training</span></Link>
-          <Link href="/">▤ <span>Reports</span></Link>
+          <Link href="/opponents">◌ <span>Opponents</span></Link>
+          <Link href="/teams">◉ <span>Teams</span></Link>
+          <Link href="/players">♙ <span>Players</span></Link>
+          <Link href="/tactical-intelligence">✦ <span>Tactical Intelligence</span></Link>
+          <Link href="/training">⚽ <span>Training</span></Link>
+          <Link href="/reports">▤ <span>Reports</span></Link>
         </nav>
         <div className="sidebar-footer">360FOS<br/><small>Football Intelligence for a Better Tomorrow</small></div>
       </aside>
