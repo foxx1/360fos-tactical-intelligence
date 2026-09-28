@@ -227,7 +227,7 @@ export default function NewMatchPage() {
 
   return (
     <main className="fos-shell">
-      <aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/">◌ <span>Opponents</span></Link><Link href="/">⚽ <span>Training</span></Link></nav></aside>
+      <aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/opponents">◌ <span>Opponents</span></Link><Link href="/training">⚽ <span>Training</span></Link></nav></aside>
       <section className="fos-main">
         <div className="crumb">MATCHES / NEW</div>
         <div className="page-heading"><div><h1>Create Match</h1><p>Set the match context before collecting tactical evidence.</p></div><Link className="secondary-action" href="/matches">Back</Link></div>
