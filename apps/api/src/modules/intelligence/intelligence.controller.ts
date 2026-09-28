@@ -8,37 +8,37 @@ export class IntelligenceController {
   constructor(private readonly service: IntelligenceService) {}
 
   @Get("summary")
-  summary(@Req() req: any, @Param("matchId") matchId: string) {
-    return { success: true, data: this.service.summarize(req.user.id, matchId) };
+  async summary(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.summarize(req.user.id, matchId) };
   }
 
   @Get("strengths-weaknesses")
-  strengthsWeaknesses(@Req() req: any, @Param("matchId") matchId: string) {
-    return { success: true, data: this.service.strengthsWeaknesses(req.user.id, matchId) };
+  async strengthsWeaknesses(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.strengthsWeaknesses(req.user.id, matchId) };
   }
 
   @Get("matrix")
-  matrix(@Req() req: any, @Param("matchId") matchId: string) {
-    return { success: true, data: this.service.matrix(req.user.id, matchId) };
+  async matrix(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.matrix(req.user.id, matchId) };
   }
 
   @Get("gaps")
-  findGaps(@Req() req: any, @Param("matchId") matchId: string) {
-    return { success: true, data: this.service.findGaps(req.user.id, matchId) };
+  async findGaps(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.findGaps(req.user.id, matchId) };
   }
 
   @Post("generate")
-  generate(@Req() req: any, @Param("matchId") matchId: string) {
-    return { success: true, data: this.service.generateFromEvidence(req.user.id, matchId) };
+  async generate(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.generateFromEvidence(req.user.id, matchId) };
   }
 
   @Post("gaps")
-  createGap(@Req() req: any, @Param("matchId") matchId: string, @Body() dto: CreateGapDto) {
-    return { success: true, data: this.service.createGap(req.user.id, matchId, dto) };
+  async createGap(@Req() req: any, @Param("matchId") matchId: string, @Body() dto: CreateGapDto) {
+    return { success: true, data: await this.service.createGap(req.user.id, matchId, dto) };
   }
 
   @Patch("gaps/:gapId")
-  updateGap(@Req() req: any, @Param("matchId") matchId: string, @Param("gapId") gapId: string, @Body() dto: UpdateGapDto) {
-    return { success: true, data: this.service.updateGap(req.user.id, matchId, gapId, dto) };
+  async updateGap(@Req() req: any, @Param("matchId") matchId: string, @Param("gapId") gapId: string, @Body() dto: UpdateGapDto) {
+    return { success: true, data: await this.service.updateGap(req.user.id, matchId, gapId, dto) };
   }
 }
