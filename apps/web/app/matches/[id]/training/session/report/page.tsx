@@ -46,6 +46,12 @@ export default function SessionPerformanceReport(){
  <div className="ai-badge">RULE-BASED LEARNING ENGINE · COACH VALIDATION REQUIRED</div></>}
  </section></main>
 }
-function getBehaviours(report: Report){\n const recorded=Array.isArray(report.behaviours)?report.behaviours:[];\n if(recorded.length) return recorded;\n const exercises=Array.isArray(report.session?.exercises)?report.session.exercises:[];\n return exercises.map((e:any)=>({id:e.id,exerciseId:e.id,behaviour:e.matchBehaviour??e.objective,targetKpi:e.successKpi,successfulReps:0,failedReps:0,successRate:0,observation:"No exercise-level behaviour result recorded yet."}));\n}\nfunction Field({label,value}:{label:string,value?:string|null}){return <div className="training-field"><span>{label}</span><p>{value||"Not defined"}</p></div>}
+function getBehaviours(report: Report){
+ const recorded=Array.isArray(report.behaviours)?report.behaviours:[];
+ if(recorded.length) return recorded;
+ const exercises=Array.isArray(report.session?.exercises)?report.session.exercises:[];
+ return exercises.map((e:any)=>({id:e.id,exerciseId:e.id,behaviour:e.matchBehaviour??e.objective,targetKpi:e.successKpi,successfulReps:0,failedReps:0,successRate:0,observation:"No exercise-level behaviour result recorded yet."}));
+}
+function Field({label,value}:{label:string,value?:string|null}){return <div className="training-field"><span>{label}</span><p>{value||"Not defined"}</p></div>}
 function label(v?:string){return (v??"PENDING").replaceAll("_"," ")}
 function transferText(v?:string){return v==="VALIDATED"?"Target behaviour reached the configured training threshold.":v==="PARTIALLY_VALIDATED"?"Behaviour is developing but needs reinforcement before full transfer.":"Behaviour has not reached the configured threshold and should be re-taught."}
