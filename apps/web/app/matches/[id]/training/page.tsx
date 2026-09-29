@@ -143,8 +143,7 @@ export default function TrainingPlannerPage() {
 
               <div className="training-card-footer">
                 <span>Evidence link</span><small>{p.evidence ?? "Tactical gap evidence"}</small>
-                <button className="secondary-action" onClick={() => navigator.clipboard?.writeText([p.objective,p.exerciseType,p.constraint,p.successKpi].filter(Boolean).join("
-"))}>Copy Exercise Brief</button>
+                <button className="secondary-action" onClick={() => navigator.clipboard?.writeText([p.objective,p.exerciseType,p.constraint,p.successKpi].filter(Boolean).join("\n"))}>Copy Exercise Brief</button>
               </div>
             </article>
           ))}
