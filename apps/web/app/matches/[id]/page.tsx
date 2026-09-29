@@ -45,11 +45,18 @@ export default function MatchWorkspacePage() {
           <div className="team-mark">{match.team.name.slice(0,1)}</div><div><h1>{match.team.name} <em>vs</em> {match.opponent.name}</h1><p>{match.competition?.name ?? "Competition"} · {match.season?.name ?? "Season"} · {new Date(match.matchDate).toLocaleDateString()} · {match.venue ?? "Venue not set"}</p></div>
           <div className="score-block"><span className="pill green">{match.status}</span><strong>{match.ourScore ?? "—"} : {match.opponentScore ?? "—"}</strong><small>{match.formation ?? "Formation not set"} · {match.isHome ? "Home" : "Away"}</small></div>
         </section>
-        <div className="workspace-tabs">{tabs.map(([label,key],i)=>{
-          if (key==="evidence") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/evidence"} key={key}>{label}</Link>;
-          if (key==="matrix") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/intelligence"} key={key}>{label}</Link>;
-          if (key==="training") return <Link className="workspace-tab-link" href={"/matches/"+params.id+"/training"} key={key}>{label}</Link>;
-          return <button className={i===0?"active":""} key={key}>{label}</button>;
+        <div className="workspace-tabs">{tabs.map(([label,key])=>{
+          const routes: Record<string,string> = {
+            overview: "/matches/"+params.id,
+            "our-team": "/matches/"+params.id+"/our-team",
+            opponent: "/matches/"+params.id+"/opponent",
+            evidence: "/matches/"+params.id+"/evidence",
+            sw: "/matches/"+params.id+"/strengths-weaknesses",
+            matrix: "/matches/"+params.id+"/intelligence",
+            training: "/matches/"+params.id+"/training",
+            plan: "/matches/"+params.id+"/match-plan"
+          };
+          return <Link className={"workspace-tab-link "+(key==="overview"?"active":"")} href={routes[key]} key={key}>{label}</Link>;
         })}</div>
 
         <section className="metric-grid">
