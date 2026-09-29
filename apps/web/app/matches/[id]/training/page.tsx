@@ -94,7 +94,8 @@ export default function TrainingPlannerPage() {
             <p>Convert approved match intelligence into game-based exercises, constraints, KPIs and observable match behaviours.</p>
           </div>
           <div className="heading-actions">
-            <Link className="secondary-action" href={"/matches/" + params.id + "/intelligence"}>← Intelligence Matrix</Link>\n            <Link className="secondary-action" href={"/matches/" + params.id + "/training/session"}>Session Builder →</Link>
+            <Link className="secondary-action" href={"/matches/" + params.id + "/intelligence"}>← Intelligence Matrix</Link>
+            <Link className="secondary-action" href={"/matches/" + params.id + "/training/session"}>Session Builder →</Link>
             <button className="primary-action" onClick={generate} disabled={generating}>{generating ? "Generating..." : "Generate Training Plan ✦"}</button>
           </div>
         </section>
@@ -142,7 +143,8 @@ export default function TrainingPlannerPage() {
 
               <div className="training-card-footer">
                 <span>Evidence link</span><small>{p.evidence ?? "Tactical gap evidence"}</small>
-                <button className="secondary-action" onClick={() => navigator.clipboard?.writeText([p.objective,p.exerciseType,p.constraint,p.successKpi].filter(Boolean).join("\n"))}>Copy Exercise Brief</button>
+                <button className="secondary-action" onClick={() => navigator.clipboard?.writeText([p.objective,p.exerciseType,p.constraint,p.successKpi].filter(Boolean).join("
+"))}>Copy Exercise Brief</button>
               </div>
             </article>
           ))}
