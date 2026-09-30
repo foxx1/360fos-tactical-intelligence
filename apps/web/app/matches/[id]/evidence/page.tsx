@@ -17,13 +17,6 @@ const eventTemplates = [
   "Slow recovery","Positioning error","Space conceded"
 ];
 
-const principleOptions = [
-  "Build-up","Progression","Chance Creation","Finishing","Pressing","Counter-Pressing",
-  "Compactness","Press Resistance","Defensive Line","Protection of Central Spaces",
-  "Transition to Attack","Transition to Defence","Overload to Isolate","Width & Depth",
-  "Set-Piece Organisation"
-];
-
 const outcomeOptions = [
   "Progression","Chance Created","Shot","Goal","Possession Retained",
   "Possession Lost","Opponent Progression","Opponent Chance","Recovery","No Outcome"
@@ -34,11 +27,38 @@ export default function EvidencePage() {
   const [evidence,setEvidence]=useState<Evidence[]>([]);
   const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [generating,setGenerating]=useState(false);
   const [message,setMessage]=useState(""); const [error,setError]=useState("");
+  const [taxonomy,setTaxonomy]=useState<any[]>([]);
+  const [taxonomyLoading,setTaxonomyLoading]=useState(true);
   const [form,setForm]=useState({analysisType:"OPPONENT",minute:"0",phase:"OUT_OF_POSSESSION",event:"",principle:"",subPrinciple:"",behaviour:"",actor:"",target:"",trigger:"",outcome:"",zone:"",impact:"3",note:"",videoRef:""});
 
   async function session(){ const {data:{session}}=await createClient().auth.getSession(); if(!session){router.replace("/login");return null} return session; }
-  async function load(){ const s=await session(); if(!s)return; const base=process.env.NEXT_PUBLIC_API_URL??"http://localhost:4000/api/v1"; const r=await fetch(base+"/matches/"+params.id+"/evidence",{headers:{Authorization:"Bearer "+s.access_token}}); if(r.ok){const j: unknown=await r.json().catch(()=>null);const raw=j&&typeof j==="object"&&"data" in j?(j as {data?:unknown}).data:j;setEvidence(Array.isArray(raw)?raw as Evidence[]:[])}else router.replace("/matches"); setLoading(false); }
+  async function load(){
+    const s=await session(); if(!s)return;
+    const base=process.env.NEXT_PUBLIC_API_URL??"http://localhost:4000/api/v1";
+    const [evidenceResponse,taxonomyResponse]=await Promise.all([
+      fetch(base+"/matches/"+params.id+"/evidence",{headers:{Authorization:"Bearer "+s.access_token}}),
+      fetch(base+"/tactical-taxonomy",{headers:{Authorization:"Bearer "+s.access_token}})
+    ]);
+    if(evidenceResponse.ok){
+      const j: unknown=await evidenceResponse.json().catch(()=>null);
+      const raw=j&&typeof j==="object"&&"data" in j?(j as {data?:unknown}).data:j;
+      setEvidence(Array.isArray(raw)?raw as Evidence[]:[]);
+    } else router.replace("/matches");
+    if(taxonomyResponse.ok){
+      const j: unknown=await taxonomyResponse.json().catch(()=>null);
+      const raw=j&&typeof j==="object"&&"data" in j?(j as {data?:unknown}).data:j;
+      setTaxonomy(Array.isArray(raw)?raw:[]);
+    } else setError("Unable to load tactical taxonomy.");
+    setLoading(false); setTaxonomyLoading(false);
+  }
   useEffect(()=>{load()},[params.id]);
+
+  const selectedPhase=taxonomy.find((x:any)=>x.id===form.phase);
+  const selectedPrinciple=selectedPhase?.principles?.find((x:any)=>x.id===form.principle);
+  const selectedSubPrinciple=selectedPrinciple?.subPrinciples?.find((x:any)=>x.id===form.subPrinciple);
+  const principleOptions=selectedPhase?.principles??[];
+  const subPrincipleOptions=selectedPrinciple?.subPrinciples??[];
+  const behaviourOptions=selectedSubPrinciple?.behaviours??[];
 
   async function submit(e:FormEvent){
     e.preventDefault(); setSaving(true); setError(""); setMessage("");
@@ -70,10 +90,10 @@ export default function EvidencePage() {
           <div className="evidence-grid">
             <label>Minute<input required type="number" min="0" step=".1" value={form.minute} onChange={e=>setForm({...form,minute:e.target.value})}/></label>
             <label>Impact<select value={form.impact} onChange={e=>setForm({...form,impact:e.target.value})}>{[1,2,3,4,5].map(x=><option key={x} value={x}>{x} / 5</option>)}</select></label>
-            <label>Phase<select value={form.phase} onChange={e=>setForm({...form,phase:e.target.value})}>{phases.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
+            <label>Phase<select value={form.phase} disabled={taxonomyLoading} onChange={e=>setForm({...form,phase:e.target.value,principle:"",subPrinciple:"",behaviour:""})}>{(taxonomy.length?taxonomy:phases).map((x:any)=>{const v=x.id??x[0];const l=x.name??x[1];return <option key={v} value={v}>{l}</option>})}</select></label>
             <label>Zone<input value={form.zone} onChange={e=>setForm({...form,zone:e.target.value})} placeholder="Right half-space"/></label>
-            <label>Principle<select value={form.principle} onChange={e=>setForm({...form,principle:e.target.value})}><option value="">Select principle</option>{principleOptions.map(x=><option key={x}>{x}</option>)}</select></label>
-            <label>Sub-Principle<input value={form.subPrinciple} onChange={e=>setForm({...form,subPrinciple:e.target.value})} placeholder="e.g. Third-player progression"/></label>
+            <label>Principle<select value={form.principle} disabled={taxonomyLoading||!selectedPhase} onChange={e=>setForm({...form,principle:e.target.value,subPrinciple:"",behaviour:""})}><option value="">Select principle</option>{principleOptions.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <label>Sub-Principle<select value={form.subPrinciple} disabled={taxonomyLoading||!selectedPrinciple} onChange={e=>setForm({...form,subPrinciple:e.target.value,behaviour:""})}><option value="">Select sub-principle</option>{subPrincipleOptions.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
             <label>Outcome<select value={form.outcome} onChange={e=>setForm({...form,outcome:e.target.value})}><option value="">Select outcome</option>{outcomeOptions.map(x=><option key={x}>{x}</option>)}</select></label>
             <label>Actor / Unit<input value={form.actor} onChange={e=>setForm({...form,actor:e.target.value})} placeholder="RB / Back four / Front 3"/></label>
             <label>Target<input value={form.target} onChange={e=>setForm({...form,target:e.target.value})} placeholder="Opponent LB / Zone 14"/></label>
@@ -81,7 +101,7 @@ export default function EvidencePage() {
           </div>
           <label>Event<select required value={eventTemplates.includes(form.event)?form.event:""} onChange={e=>setForm({...form,event:e.target.value})}><option value="">Select common event</option>{eventTemplates.map(x=><option key={x}>{x}</option>)}</select></label>
           <label>Or type your own<input value={eventTemplates.includes(form.event)?"":form.event} onChange={e=>setForm({...form,event:e.target.value})} placeholder="e.g. Full-back isolated 1v1"/></label>
-          <label>Behaviour<input value={form.behaviour} onChange={e=>setForm({...form,behaviour:e.target.value})} placeholder="What did the player/unit actually do?"/></label>
+          <label>Behaviour<select value={form.behaviour} disabled={taxonomyLoading||!selectedSubPrinciple} onChange={e=>setForm({...form,behaviour:e.target.value})}><option value="">Select behaviour</option>{behaviourOptions.map((x:any)=><option key={x.id} value={x.name}>{x.name}</option>)}</select></label>
           <label>Analyst Note<textarea required value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="What happened? What did you observe? What is the tactical significance?"/></label>
           <label>Video Reference<input value={form.videoRef} onChange={e=>setForm({...form,videoRef:e.target.value})} placeholder="Veo timestamp / clip URL / file reference"/></label>
           {error&&<div className="error-box">{error}</div>}{message&&<div className="success-box">{message}</div>}
