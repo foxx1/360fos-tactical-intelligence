@@ -306,7 +306,7 @@ export class IntelligenceService {
         ? "STRENGTH"
         : successPct <= 40
           ? "WEAKNESS"
-          : "STRENGTH";
+          : null;
 
       const impact = Math.max(
         1,
@@ -346,7 +346,7 @@ export class IntelligenceService {
           successPct,
           impact,
           findingType,
-          priority,
+          priority: findingType ? priority : "LOW",
           videoRef: marker,
         },
       });
