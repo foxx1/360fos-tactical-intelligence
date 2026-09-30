@@ -50,16 +50,19 @@ create index if not exists opponent_scouting_evidence_match_outcome_idx
 alter table public.opponent_scouting_matches enable row level security;
 alter table public.opponent_scouting_evidence enable row level security;
 
+drop policy if exists "opponent_scouting_matches_org_select" on public.opponent_scouting_matches;
 create policy "opponent_scouting_matches_org_select" on public.opponent_scouting_matches
 for select to authenticated using (
   exists (select 1 from public.matches m join public.teams t on t.id=m.team_id
   where m.id=upcoming_match_id and public.is_org_member(t.organization_id))
 );
+drop policy if exists "opponent_scouting_matches_org_insert" on public.opponent_scouting_matches;
 create policy "opponent_scouting_matches_org_insert" on public.opponent_scouting_matches
 for insert to authenticated with check (
   exists (select 1 from public.matches m join public.teams t on t.id=m.team_id
   where m.id=upcoming_match_id and public.is_org_member(t.organization_id))
 );
+drop policy if exists "opponent_scouting_matches_org_update" on public.opponent_scouting_matches;
 create policy "opponent_scouting_matches_org_update" on public.opponent_scouting_matches
 for update to authenticated using (
   exists (select 1 from public.matches m join public.teams t on t.id=m.team_id
@@ -68,24 +71,28 @@ for update to authenticated using (
   exists (select 1 from public.matches m join public.teams t on t.id=m.team_id
   where m.id=upcoming_match_id and public.is_org_member(t.organization_id))
 );
+drop policy if exists "opponent_scouting_matches_org_delete" on public.opponent_scouting_matches;
 create policy "opponent_scouting_matches_org_delete" on public.opponent_scouting_matches
 for delete to authenticated using (
   exists (select 1 from public.matches m join public.teams t on t.id=m.team_id
   where m.id=upcoming_match_id and public.is_org_member(t.organization_id))
 );
 
+drop policy if exists "opponent_scouting_evidence_org_select" on public.opponent_scouting_evidence;
 create policy "opponent_scouting_evidence_org_select" on public.opponent_scouting_evidence
 for select to authenticated using (
   exists (select 1 from public.opponent_scouting_matches sm
   join public.matches m on m.id=sm.upcoming_match_id join public.teams t on t.id=m.team_id
   where sm.id=scouting_match_id and public.is_org_member(t.organization_id))
 );
+drop policy if exists "opponent_scouting_evidence_org_insert" on public.opponent_scouting_evidence;
 create policy "opponent_scouting_evidence_org_insert" on public.opponent_scouting_evidence
 for insert to authenticated with check (
   exists (select 1 from public.opponent_scouting_matches sm
   join public.matches m on m.id=sm.upcoming_match_id join public.teams t on t.id=m.team_id
   where sm.id=scouting_match_id and public.is_org_member(t.organization_id))
 );
+drop policy if exists "opponent_scouting_evidence_org_update" on public.opponent_scouting_evidence;
 create policy "opponent_scouting_evidence_org_update" on public.opponent_scouting_evidence
 for update to authenticated using (
   exists (select 1 from public.opponent_scouting_matches sm
@@ -96,6 +103,7 @@ for update to authenticated using (
   join public.matches m on m.id=sm.upcoming_match_id join public.teams t on t.id=m.team_id
   where sm.id=scouting_match_id and public.is_org_member(t.organization_id))
 );
+drop policy if exists "opponent_scouting_evidence_org_delete" on public.opponent_scouting_evidence;
 create policy "opponent_scouting_evidence_org_delete" on public.opponent_scouting_evidence
 for delete to authenticated using (
   exists (select 1 from public.opponent_scouting_matches sm
