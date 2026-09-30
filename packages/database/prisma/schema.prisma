@@ -201,6 +201,13 @@ model Evidence {
   minute Float @map("minute")
   phase TacticalPhase @map("phase")
   event String @map("event")
+  principle String? @map("principle")
+  subPrinciple String? @map("sub_principle")
+  behaviour String? @map("behaviour")
+  actor String? @map("actor")
+  target String? @map("target")
+  trigger String? @map("trigger")
+  outcome String? @map("outcome")
   zone String? @map("zone")
   impact Int? @map("impact")
   note String @map("note")
@@ -211,6 +218,8 @@ model Evidence {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([matchId, minute])
+  @@index([matchId, phase, principle])
+  @@index([matchId, analysisType, outcome])
   @@map("evidence")
 }
 
