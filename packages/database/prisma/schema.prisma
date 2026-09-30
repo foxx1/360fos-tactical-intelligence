@@ -226,7 +226,14 @@ model Analysis {
   type AnalysisType @map("type")
   phase TacticalPhase @map("phase")
   subPhase String @map("sub_phase")
+  principle String? @map("principle")
+  subPrinciple String? @map("sub_principle")
   behaviour String @map("behaviour")
+  actor String? @map("actor")
+  target String? @map("target")
+  trigger String? @map("trigger")
+  outcome String? @map("outcome")
+  zone String? @map("zone")
   evidence String? @map("evidence")
   frequency Int          @default(1) @map("frequency")
   successPct Float? @map("success_pct")
@@ -240,6 +247,8 @@ model Analysis {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([matchId, type, phase])
+  @@index([matchId, type, principle])
+  @@index([matchId, type, outcome])
   @@map("analyses")
 }
 
