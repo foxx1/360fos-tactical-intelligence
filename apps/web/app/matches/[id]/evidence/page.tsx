@@ -54,8 +54,8 @@ export default function EvidencePage() {
   useEffect(()=>{load()},[params.id]);
 
   const selectedPhase=taxonomy.find((x:any)=>x.id===form.phase);
-  const selectedPrinciple=selectedPhase?.principles?.find((x:any)=>x.id===form.principle);
-  const selectedSubPrinciple=selectedPrinciple?.subPrinciples?.find((x:any)=>x.id===form.subPrinciple);
+  const selectedPrinciple=selectedPhase?.principles?.find((x:any)=>x.name===form.principle);
+  const selectedSubPrinciple=selectedPrinciple?.subPrinciples?.find((x:any)=>x.name===form.subPrinciple);
   const principleOptions=selectedPhase?.principles??[];
   const subPrincipleOptions=selectedPrinciple?.subPrinciples??[];
   const behaviourOptions=selectedSubPrinciple?.behaviours??[];
@@ -92,7 +92,7 @@ export default function EvidencePage() {
             <label>Impact<select value={form.impact} onChange={e=>setForm({...form,impact:e.target.value})}>{[1,2,3,4,5].map(x=><option key={x} value={x}>{x} / 5</option>)}</select></label>
             <label>Phase<select value={form.phase} disabled={taxonomyLoading} onChange={e=>setForm({...form,phase:e.target.value,principle:"",subPrinciple:"",behaviour:""})}>{(taxonomy.length?taxonomy:phases).map((x:any)=>{const v=x.id??x[0];const l=x.name??x[1];return <option key={v} value={v}>{l}</option>})}</select></label>
             <label>Zone<input value={form.zone} onChange={e=>setForm({...form,zone:e.target.value})} placeholder="Right half-space"/></label>
-            <label>Principle<select value={form.principle} disabled={taxonomyLoading||!selectedPhase} onChange={e=>setForm({...form,principle:e.target.value,subPrinciple:"",behaviour:""})}><option value="">Select principle</option>{principleOptions.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <label>Principle<select value={form.principle} disabled={taxonomyLoading||!selectedPhase} onChange={e=>setForm({...form,principle:e.target.value,subPrinciple:"",behaviour:""})}><option value="">Select principle</option>{principleOptions.map((x:any)=><option key={x.id} value={x.name}>{x.name}</option>)}</select></label>
             <label>Sub-Principle<select value={form.subPrinciple} disabled={taxonomyLoading||!selectedPrinciple} onChange={e=>setForm({...form,subPrinciple:e.target.value,behaviour:""})}><option value="">Select sub-principle</option>{subPrincipleOptions.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
             <label>Outcome<select value={form.outcome} onChange={e=>setForm({...form,outcome:e.target.value})}><option value="">Select outcome</option>{outcomeOptions.map(x=><option key={x}>{x}</option>)}</select></label>
             <label>Actor / Unit<input value={form.actor} onChange={e=>setForm({...form,actor:e.target.value})} placeholder="RB / Back four / Front 3"/></label>
