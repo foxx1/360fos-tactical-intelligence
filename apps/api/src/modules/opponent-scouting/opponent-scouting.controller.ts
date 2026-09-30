@@ -15,6 +15,7 @@ export class OpponentScoutingController {
     return { success: true, data: await this.service.addScoutingMatch(req.user.id, matchId, body) };
   }
 
+
   @Get("matches/:scoutingMatchId")
   async getMatch(@Req() req: any, @Param("matchId") matchId: string, @Param("scoutingMatchId") scoutingMatchId: string) {
     return { success: true, data: await this.service.getScoutingMatchDetail(req.user.id, matchId, scoutingMatchId) };
