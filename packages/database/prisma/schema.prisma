@@ -182,6 +182,7 @@ model Opponent {
   name String @map("name")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   matches        Match[]      @relation("OpponentMatches")
+  scoutingMatches OpponentScoutingMatch[]
   createdAt DateTime     @default(now()) @map("created_at")
 
   @@unique([organizationId, name])
