@@ -11,6 +11,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { TeamsModule } from './modules/teams/teams.module';
 import { OpponentsModule } from './modules/opponents/opponents.module';
 import { CompetitionsModule } from './modules/competitions/competitions.module';
+import { TacticalTaxonomyModule } from './modules/tactical-taxonomy/tactical-taxonomy.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CompetitionsModule } from './modules/competitions/competitions.module';
     EvidenceModule,
     IntelligenceModule,
     TrainingModule,
+    TacticalTaxonomyModule,
   ],
 })
 export class AppModule {}
