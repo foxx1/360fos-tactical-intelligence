@@ -205,3 +205,11 @@ button, input { font: inherit; }
 .inline-create input { min-width:0; }
 .inline-create .secondary-action { border:1px solid #d9e0e9; background:white; color:#1260d8; border-radius:8px; padding:8px 12px; cursor:pointer; }
 .inline-create .secondary-action:disabled { opacity:.5; cursor:not-allowed; }
+
+
+.fos-error-page{min-height:100vh;display:grid;place-items:center;padding:32px;background:var(--bg,#f5f7fa);}
+.fos-error-card{width:min(560px,100%);padding:40px;border:1px solid var(--border,#dfe4ea);border-radius:20px;background:var(--surface,#fff);box-shadow:0 18px 50px rgba(15,23,42,.08);}
+.fos-error-card h1{margin:14px 0 10px;font-size:32px;line-height:1.15;}
+.fos-error-card p{margin:0;color:var(--muted,#667085);line-height:1.65;}
+.error-actions{display:flex;gap:12px;align-items:center;margin-top:26px;flex-wrap:wrap;}
+.error-actions a{text-decoration:none;}
