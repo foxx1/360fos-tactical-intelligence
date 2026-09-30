@@ -24,6 +24,54 @@ enum TacticalPhase {
   @@map("tactical_phase")
 }
 
+model TacticalPrinciple {
+  id          String   @id @default(uuid())
+  phase       TacticalPhase @map("phase")
+  name        String   @map("name")
+  description String?  @map("description")
+  sortOrder   Int      @default(0) @map("sort_order")
+  active      Boolean  @default(true) @map("active")
+  subPrinciples TacticalSubPrinciple[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([phase, name])
+  @@index([phase, active, sortOrder])
+  @@map("tactical_principles")
+}
+
+model TacticalSubPrinciple {
+  id          String   @id @default(uuid())
+  principleId String   @map("principle_id")
+  name        String   @map("name")
+  description String?  @map("description")
+  sortOrder   Int      @default(0) @map("sort_order")
+  active      Boolean  @default(true) @map("active")
+  principle   TacticalPrinciple @relation(fields: [principleId], references: [id], onDelete: Cascade)
+  behaviours TacticalBehaviourDefinition[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([principleId, name])
+  @@index([principleId, active, sortOrder])
+  @@map("tactical_sub_principles")
+}
+
+model TacticalBehaviourDefinition {
+  id            String   @id @default(uuid())
+  subPrincipleId String? @map("sub_principle_id")
+  name          String   @map("name")
+  description   String?  @map("description")
+  teamBehaviour Boolean  @default(true) @map("team_behaviour")
+  active        Boolean  @default(true) @map("active")
+  subPrinciple  TacticalSubPrinciple? @relation(fields: [subPrincipleId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([subPrincipleId, active])
+  @@map("tactical_behaviour_definitions")
+}
+
 enum AnalysisType {
   OUR_TEAM
   OPPONENT
