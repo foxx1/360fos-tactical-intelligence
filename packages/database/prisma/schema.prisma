@@ -211,6 +211,7 @@ model Match {
   gaps        TacticalGap[]
   priorities  TrainingPriority[]
   trainingSessions TrainingSession[]
+  opponentScoutingMatches OpponentScoutingMatch[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -480,4 +481,55 @@ model TrainingKpiEvent {
 
   @@index([runtimeId, createdAt])
   @@map("training_kpi_events")
+}
+
+
+model OpponentScoutingMatch {
+  id                    String   @id @default(uuid())
+  upcomingMatchId      String   @map("upcoming_match_id")
+  opponentId           String   @map("opponent_id")
+  opponentName          String   @map("opponent_name")
+  externalOpponentName  String   @map("external_opponent_name")
+  matchDate             DateTime @map("match_date")
+  opponentScore         Int?     @map("opponent_score")
+  externalScore         Int?     @map("external_score")
+  opponentHome          Boolean  @default(true) @map("opponent_home")
+  videoRef              String?  @map("video_ref")
+  notes                 String?
+  sequence              Int      @default(1) @map("sequence")
+  upcomingMatch         Match    @relation(fields: [upcomingMatchId], references: [id], onDelete: Cascade)
+  opponent              Opponent @relation(fields: [opponentId], references: [id], onDelete: Cascade)
+  evidence              OpponentScoutingEvidence[]
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@unique([upcomingMatchId, sequence])
+  @@index([upcomingMatchId, matchDate])
+  @@index([opponentId, matchDate])
+  @@map("opponent_scouting_matches")
+}
+
+model OpponentScoutingEvidence {
+  id              String       @id @default(uuid())
+  scoutingMatchId String       @map("scouting_match_id")
+  minute          Float
+  phase           TacticalPhase
+  principle       String?
+  subPrinciple    String?      @map("sub_principle")
+  behaviour       String?
+  actor           String?
+  target          String?
+  trigger         String?
+  outcome         String?
+  zone            String?
+  impact          Int?
+  note            String
+  videoRef        String?      @map("video_ref")
+  scoutingMatch   OpponentScoutingMatch @relation(fields: [scoutingMatchId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([scoutingMatchId, minute])
+  @@index([scoutingMatchId, phase, principle])
+  @@index([scoutingMatchId, outcome])
+  @@map("opponent_scouting_evidence")
 }
