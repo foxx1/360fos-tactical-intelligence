@@ -177,6 +177,7 @@ model Team {
   matches        Match[]      @relation("OurTeamMatches")
   competitionEntries TeamCompetition[]
   opponents      Opponent[]   @relation("TeamOpponents")
+  externalScoutingMatches OpponentScoutingMatch[] @relation("ScoutingExternalOpponentTeam")
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
