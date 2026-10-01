@@ -73,7 +73,7 @@ export default function OpponentPage() {
 
   async function load() {
     try {
-      const [workspaceResponse, summaryResponse, taxonomyResponse, teamsResponse] = await Promise.all([
+      const [workspaceResponse, summaryResponse, intelligenceResponse, taxonomyResponse, teamsResponse] = await Promise.all([
         authFetch("/matches/" + params.id + "/opponent-scouting"),
         authFetch("/matches/" + params.id + "/opponent-scouting/summary"),
         authFetch("/matches/" + params.id + "/opponent-scouting/intelligence"),
