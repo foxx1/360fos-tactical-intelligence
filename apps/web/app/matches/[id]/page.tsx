@@ -37,7 +37,7 @@ export default function MatchWorkspacePage() {
 
   return (
     <main className="fos-shell">
-      <aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/opponents">◌ <span>Opponents</span></Link><Link href="/training">⚽ <span>Training</span></Link><Link href="/reports">▤ <span>Reports</span></Link></nav><div className="sidebar-footer">360FOS<br/><small>Turn Analysis into Performance</small></div></aside>
+      <aside className="fos-sidebar"><div className="fos-brand"><strong>◆ 360<span>FOS</span></strong><small>Tactical Intelligence</small></div><nav><Link href="/">⌂ <span>Dashboard</span></Link><Link className="active" href="/matches">▣ <span>Matches</span></Link><Link href="/opponents">◌ <span>Opponents</span></Link><Link href="/opponent-scouting">◈ <span>Opponent Scouting</span></Link><Link href="/training">⚽ <span>Training</span></Link><Link href="/reports">▤ <span>Reports</span></Link></nav><div className="sidebar-footer">360FOS<br/><small>Turn Analysis into Performance</small></div></aside>
       <section className="fos-main">
         <header className="fos-topbar"><div className="fos-search fake-search">⌕ Search matches, opponents, players, insights...</div><div className="fos-user">{match.team.name} <span>•</span> Tactical Workspace</div></header>
         <div className="breadcrumb-row"><Link href="/matches">Matches</Link><span>›</span><span>{match.team.name} vs {match.opponent.name}</span><span>›</span><b>Workspace</b></div>
