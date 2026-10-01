@@ -26,6 +26,11 @@ export class OpponentScoutingController {
     return { success: true, data: await this.service.addEvidence(req.user.id, matchId, scoutingMatchId, body) };
   }
 
+  @Get("intelligence")
+  async intelligence(@Req() req: any, @Param("matchId") matchId: string) {
+    return { success: true, data: await this.service.getIntelligence(req.user.id, matchId) };
+  }
+
   @Get("summary")
   async summary(@Req() req: any, @Param("matchId") matchId: string) {
     return { success: true, data: await this.service.getSummary(req.user.id, matchId) };
