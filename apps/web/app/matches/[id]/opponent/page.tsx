@@ -18,6 +18,7 @@ export default function OpponentPage() {
   const router = useRouter();
   const [workspace, setWorkspace] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
+  const [intelligence, setIntelligence] = useState<any>(null);
   const [taxonomy, setTaxonomy] = useState<TaxonomyPhase[]>([]);
   const [registryTeams, setRegistryTeams] = useState<RegistryTeam[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState("");
@@ -75,18 +76,21 @@ export default function OpponentPage() {
       const [workspaceResponse, summaryResponse, taxonomyResponse, teamsResponse] = await Promise.all([
         authFetch("/matches/" + params.id + "/opponent-scouting"),
         authFetch("/matches/" + params.id + "/opponent-scouting/summary"),
+        authFetch("/matches/" + params.id + "/opponent-scouting/intelligence"),
         authFetch("/tactical-taxonomy"),
         authFetch("/teams"),
       ]);
 
       const workspaceJson = await workspaceResponse.json().catch(() => null);
       const summaryJson = await summaryResponse.json().catch(() => null);
+      const intelligenceJson = await intelligenceResponse.json().catch(() => null);
       const taxonomyJson = await taxonomyResponse.json().catch(() => null);
       const teamsJson = await teamsResponse.json().catch(() => null);
 
       if (!workspaceResponse.ok) throw new Error(workspaceJson?.error?.message || "Unable to load opponent scouting.");
       setWorkspace(workspaceJson?.data);
       setSummary(summaryJson?.data);
+      setIntelligence(intelligenceJson?.data);
       setTaxonomy(Array.isArray(taxonomyJson?.data) ? taxonomyJson.data : []);
       setRegistryTeams(Array.isArray(teamsJson?.data) ? teamsJson.data : []);
 
@@ -248,6 +252,40 @@ export default function OpponentPage() {
             <button className="primary-action" disabled={savingEvidence}>{savingEvidence ? "Capturing..." : "Capture Opponent Evidence →"}</button>
           </form>
         )}
+
+        <section className="workspace-card">
+          <div className="section-kicker">OPPONENT INTELLIGENCE V1</div>
+          <h2>Opponent Tactical Model</h2>
+          <p>Rule-based synthesis across the scouting sample. Every finding is traceable to observed evidence.</p>
+          <div className="training-grid">
+            <Field label="Model" value={intelligence?.modelVersion || "OPPONENT_INTELLIGENCE_V1"} />
+            <Field label="Sample confidence" value={intelligence ? intelligence.sample.confidence + "%" : "—"} />
+            <Field label="Evidence" value={intelligence ? String(intelligence.sample.evidenceCount) : "0"} />
+            <Field label="Quality" value={intelligence?.sample.quality || "NO_DATA"} />
+          </div>
+          {intelligence?.executiveProfile?.dominantPhases?.length > 0 && (
+            <div className="training-cards">
+              <article className="workspace-card">
+                <div className="section-kicker">DOMINANT PHASES</div>
+                {intelligence.executiveProfile.dominantPhases.map((x:any)=><div className="training-field" key={x.phase}><span>{x.phase.replaceAll("_"," ")}</span><p>{x.evidenceCount} evidence · {x.coveragePct}% match coverage</p></div>)}
+              </article>
+              <article className="workspace-card">
+                <div className="section-kicker">RECURRING TENDENCIES</div>
+                {intelligence.tendencies?.slice(0,6).map((x:any)=><div className="training-field" key={x.behaviour + x.phase}><span>{x.behaviour}</span><p>{x.tendency} · {x.coveragePct}% coverage · {x.confidence}% confidence</p></div>)}
+              </article>
+            </div>
+          )}
+          <div className="training-cards">
+            <article className="workspace-card">
+              <div className="section-kicker">STRENGTHS</div>
+              {intelligence?.strengths?.length ? intelligence.strengths.slice(0,6).map((x:any)=><div className="training-field" key={"s"+x.behaviour+x.phase}><span>{x.behaviour}</span><p>{x.phase.replaceAll("_"," ")} · {x.successRate == null ? "outcome data limited" : x.successRate+"% success"} · {x.averageImpact}/5 impact</p></div>) : <p>No strength pattern meets the v1 evidence threshold.</p>}
+            </article>
+            <article className="workspace-card">
+              <div className="section-kicker">WEAKNESSES</div>
+              {intelligence?.weaknesses?.length ? intelligence.weaknesses.slice(0,6).map((x:any)=><div className="training-field" key={"w"+x.behaviour+x.phase}><span>{x.behaviour}</span><p>{x.phase.replaceAll("_"," ")} · {x.failureRate == null ? "outcome data limited" : x.failureRate+"% failure"} · {x.averageImpact}/5 impact</p></div>) : <p>No weakness pattern meets the v1 evidence threshold.</p>}
+            </article>
+          </div>
+        </section>
 
         <section className="workspace-card">
           <div className="section-kicker">CROSS-MATCH PATTERNS</div>
