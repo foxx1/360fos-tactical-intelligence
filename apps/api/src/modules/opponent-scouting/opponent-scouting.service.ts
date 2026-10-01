@@ -116,6 +116,153 @@ export class OpponentScoutingService {
     return "NEUTRAL";
   }
 
+  async getIntelligence(userId: string, matchId: string) {
+    const context = await this.getContext(userId, matchId);
+    const matches = await this.prisma.opponentScoutingMatch.findMany({
+      where: { upcomingMatchId: matchId },
+      orderBy: { matchDate: "desc" },
+      include: { externalOpponentTeam: true, evidence: { orderBy: { minute: "asc" } } },
+    });
+
+    const totalMatches = matches.length;
+    const evidenceRows = matches.flatMap((match) => match.evidence.map((e) => ({ ...e, matchId: match.id, matchSequence: match.sequence })));
+
+    type Pattern = {
+      key: string;
+      behaviour: string;
+      principle: string | null;
+      subPrinciple: string | null;
+      phase: string;
+      frequency: number;
+      matchIds: Set<string>;
+      success: number;
+      failure: number;
+      neutral: number;
+      impacts: number[];
+      examples: { scoutingMatchId: string; sequence: number; minute: number; note: string; videoRef: string | null }[];
+    };
+
+    const patterns = new Map<string, Pattern>();
+    const phaseMap = new Map<string, { evidence: number; matches: Set<string>; impact: number[] }>();
+    const principleMap = new Map<string, { evidence: number; matches: Set<string>; success: number; failure: number; impact: number[] }>();
+    const outcomeMap = new Map<string, number>();
+
+    for (const item of evidenceRows) {
+      const behaviour = item.behaviour || item.subPrinciple || item.principle || item.phase;
+      const key = [item.phase, item.principle || "", item.subPrinciple || "", behaviour].join("|");
+      const row = patterns.get(key) || {
+        key, behaviour, principle: item.principle, subPrinciple: item.subPrinciple,
+        phase: item.phase, frequency: 0, matchIds: new Set<string>(), success: 0, failure: 0, neutral: 0, impacts: [], examples: [],
+      };
+      row.frequency++;
+      row.matchIds.add(item.matchId);
+      row.impacts.push(item.impact ?? 3);
+      const outcome = this.outcomeClass(item.outcome);
+      if (outcome === "SUCCESS") row.success++;
+      else if (outcome === "FAILURE") row.failure++;
+      else row.neutral++;
+      if (row.examples.length < 3) row.examples.push({
+        scoutingMatchId: item.matchId, sequence: item.matchSequence, minute: item.minute, note: item.note, videoRef: item.videoRef,
+      });
+      patterns.set(key, row);
+
+      const phase = phaseMap.get(item.phase) || { evidence: 0, matches: new Set<string>(), impact: [] };
+      phase.evidence++; phase.matches.add(item.matchId); phase.impact.push(item.impact ?? 3); phaseMap.set(item.phase, phase);
+
+      if (item.principle) {
+        const principle = principleMap.get(item.principle) || { evidence: 0, matches: new Set<string>(), success: 0, failure: 0, impact: [] };
+        principle.evidence++; principle.matches.add(item.matchId); principle.impact.push(item.impact ?? 3);
+        if (outcome === "SUCCESS") principle.success++;
+        if (outcome === "FAILURE") principle.failure++;
+        principleMap.set(item.principle, principle);
+      }
+
+      const outcomeKey = outcome;
+      outcomeMap.set(outcomeKey, (outcomeMap.get(outcomeKey) || 0) + 1);
+    }
+
+    const buildPattern = (row: Pattern) => {
+      const decisive = row.success + row.failure;
+      const coverage = totalMatches ? row.matchIds.size / totalMatches : 0;
+      const outcomeQuality = decisive ? Math.min(1, decisive / row.frequency) : 0.35;
+      const consistency = Math.min(1, row.frequency / Math.max(2, totalMatches * 2));
+      const confidence = Math.round(100 * (0.5 * coverage + 0.3 * consistency + 0.2 * outcomeQuality));
+      const successRate = decisive ? Number(((row.success / decisive) * 100).toFixed(1)) : null;
+      const avgImpact = Number((row.impacts.reduce((a, b) => a + b, 0) / row.impacts.length).toFixed(1));
+      const strengthScore = Number((row.frequency * avgImpact * (successRate == null ? 0.5 : successRate / 100) * coverage).toFixed(2));
+      const weaknessScore = Number((row.frequency * avgImpact * (successRate == null ? 0.5 : (100 - successRate) / 100) * coverage).toFixed(2));
+      return {
+        behaviour: row.behaviour, principle: row.principle, subPrinciple: row.subPrinciple, phase: row.phase,
+        evidenceCount: row.frequency, matchCoverage: row.matchIds.size, coveragePct: Number((coverage * 100).toFixed(1)),
+        successRate, failureRate: decisive ? Number(((row.failure / decisive) * 100).toFixed(1)) : null,
+        averageImpact: avgImpact, confidence, strengthScore, weaknessScore, examples: row.examples,
+      };
+    };
+
+    const allPatterns = Array.from(patterns.values()).map(buildPattern);
+    const strengths = allPatterns
+      .filter((x) => x.evidenceCount >= 2 && (x.successRate == null ? x.averageImpact >= 4 : x.successRate >= 60))
+      .sort((a, b) => b.strengthScore - a.strengthScore)
+      .slice(0, 10);
+    const weaknesses = allPatterns
+      .filter((x) => x.evidenceCount >= 2 && x.failureRate != null && x.failureRate >= 40)
+      .sort((a, b) => b.weaknessScore - a.weaknessScore)
+      .slice(0, 10);
+
+    const tendencies = allPatterns
+      .filter((x) => x.evidenceCount >= 2 && x.coveragePct >= 40)
+      .sort((a, b) => b.coveragePct - a.coveragePct || b.evidenceCount - a.evidenceCount)
+      .slice(0, 15)
+      .map((x) => ({ ...x, tendency: x.coveragePct >= 80 ? "CONSISTENT" : x.coveragePct >= 60 ? "RECURRENT" : "EMERGING" }));
+
+    const phases = Array.from(phaseMap.entries()).map(([phase, row]) => ({
+      phase, evidenceCount: row.evidence, matchCoverage: row.matches.size,
+      coveragePct: totalMatches ? Number(((row.matches.size / totalMatches) * 100).toFixed(1)) : 0,
+      averageImpact: Number((row.impact.reduce((a, b) => a + b, 0) / row.impact.length).toFixed(1)),
+    })).sort((a, b) => b.evidenceCount - a.evidenceCount);
+
+    const principles = Array.from(principleMap.entries()).map(([principle, row]) => {
+      const decisive = row.success + row.failure;
+      return {
+        principle, evidenceCount: row.evidence, matchCoverage: row.matches.size,
+        coveragePct: totalMatches ? Number(((row.matches.size / totalMatches) * 100).toFixed(1)) : 0,
+        successRate: decisive ? Number(((row.success / decisive) * 100).toFixed(1)) : null,
+        averageImpact: Number((row.impact.reduce((a, b) => a + b, 0) / row.impact.length).toFixed(1)),
+      };
+    }).sort((a, b) => b.evidenceCount - a.evidenceCount);
+
+    const quality = totalMatches >= 5 ? "STRONG" : totalMatches >= 3 ? "GOOD" : totalMatches >= 1 ? "LIMITED" : "NO_DATA";
+    const confidence = totalMatches === 0 ? 0 : Math.round(
+      Math.min(100, (totalMatches / 5) * 60 + Math.min(40, evidenceRows.length * 2))
+    );
+
+    return {
+      modelVersion: "OPPONENT_INTELLIGENCE_V1",
+      opponent: context.opponent,
+      sample: { matchesAnalyzed: totalMatches, evidenceCount: evidenceRows.length, recommendedMatches: 5, quality, confidence },
+      executiveProfile: {
+        identity: context.opponent?.team || { id: context.opponent?.teamId || null, name: context.opponent?.name || "Opponent" },
+        dominantPhases: phases.slice(0, 3),
+        recurringTendencies: tendencies.slice(0, 8),
+        strengths: strengths.slice(0, 6),
+        weaknesses: weaknesses.slice(0, 6),
+      },
+      strengths,
+      weaknesses,
+      tendencies,
+      phases,
+      principles,
+      outcomeDistribution: Array.from(outcomeMap.entries()).map(([outcome, count]) => ({ outcome, count })),
+      matchByMatch: matches.map((match) => ({
+        id: match.id, sequence: match.sequence, date: match.matchDate,
+        opponent: match.opponentName, externalOpponent: match.externalOpponentName,
+        score: match.opponentScore != null && match.externalScore != null ? match.opponentScore + "-" + match.externalScore : null,
+        evidenceCount: match.evidence.length,
+        topPatterns: Array.from(new Set(match.evidence.map((x) => x.behaviour || x.subPrinciple || x.principle || x.phase))).slice(0, 5),
+      })),
+    };
+  }
+
   async getSummary(userId: string, matchId: string) {
     const context = await this.getContext(userId, matchId);
     const matches = await this.prisma.opponentScoutingMatch.findMany({
