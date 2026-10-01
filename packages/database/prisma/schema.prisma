@@ -548,6 +548,8 @@ model OpponentScoutingMatch {
   opponentId           String   @map("opponent_id")
   opponentName          String   @map("opponent_name")
   externalOpponentName  String   @map("external_opponent_name")
+  externalOpponentTeamId String? @map("external_opponent_team_id")
+  externalOpponentTeam Team? @relation("ScoutingExternalOpponentTeam", fields: [externalOpponentTeamId], references: [id], onDelete: SetNull)
   matchDate             DateTime @map("match_date")
   opponentScore         Int?     @map("opponent_score")
   externalScore         Int?     @map("external_score")
