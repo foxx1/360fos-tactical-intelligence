@@ -20,7 +20,7 @@ export default function DashboardPage() {
         <nav>
           <Link className="active" href="/">⌂ <span>Dashboard</span></Link>
           <Link href="/matches">▣ <span>Matches</span></Link>
-          <Link href="/opponents">◌ <span>Opponents</span></Link>
+          <Link href="/opponents">◌ <span>Opponents</span></Link><Link href="/opponent-scouting">◈ <span>Opponent Scouting</span></Link>
           <Link href="/teams">◉ <span>Teams</span></Link>
           <Link href="/players">♙ <span>Players</span></Link>
           <Link href="/tactical-intelligence">✦ <span>Tactical Intelligence</span></Link>
