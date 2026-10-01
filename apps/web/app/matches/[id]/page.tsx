@@ -59,6 +59,8 @@ export default function MatchWorkspacePage() {
           return <Link className={"workspace-tab-link "+(key==="overview"?"active":"")} href={routes[key]} key={key}>{label}</Link>;
         })}</div>
 
+        <section className="workspace-card" style={{ marginBottom: "18px" }}><div className="card-title"><div><span className="section-kicker">PRE-MATCH INTELLIGENCE</span><h2>Opponent Scouting</h2><p>Review up to five previous opponent matches and build the cross-match tactical model.</p></div><Link className="primary-action" href={"/matches/"+params.id+"/opponent"}>Open Opponent Scouting →</Link></div></section>
+
         <section className="metric-grid">
           <Metric label="Evidence" value={match._count.evidence} sub="Tagged match moments" icon="◈"/>
           <Metric label="Analysis Findings" value={match._count.analyses} sub="Our team + opponent" icon="✦"/>
@@ -74,7 +76,7 @@ export default function MatchWorkspacePage() {
         <section className="workspace-card next-actions"><div className="card-title"><div><span className="section-kicker">NEXT ACTIONS</span><h2>Build the intelligence</h2></div></div><div className="action-grid">
           <Link className="next-action" href={"/matches/"+params.id+"/evidence"}><span>◈</span><div><b>Add Evidence</b><small>Tag key moments from video</small></div><i>→</i></Link>
           <Link className="next-action" href={"/matches/"+params.id+"/evidence"}><span>◆</span><div><b>Analyse Our Team</b><small>Record repeatable behaviours</small></div><i>→</i></Link>
-          <Link className="next-action" href={"/matches/"+params.id+"/evidence"}><span>◌</span><div><b>Scout Opponent</b><small>Capture strengths and weaknesses</small></div><i>→</i></Link>
+          <Link className="next-action" href={"/matches/"+params.id+"/opponent"}><span>◌</span><div><b>Opponent Scouting</b><small>Analyse up to five previous matches</small></div><i>→</i></Link>
           <Link className="next-action" href={"/matches/"+params.id+"/intelligence"}><span>⚠</span><div><b>Intelligence Matrix</b><small>Connect the two analyses</small></div><i>→</i></Link>
           <Link className="next-action" href={"/matches/"+params.id+"/intelligence"}><span>⚽</span><div><b>Coach Review</b><small>Convert diagnosis into practice</small></div><i>→</i></Link>
         </div></section>
