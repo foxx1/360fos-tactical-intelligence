@@ -13,6 +13,7 @@ import { OpponentsModule } from './modules/opponents/opponents.module';
 import { CompetitionsModule } from './modules/competitions/competitions.module';
 import { TacticalTaxonomyModule } from './modules/tactical-taxonomy/tactical-taxonomy.module';
 import { OpponentScoutingModule } from './modules/opponent-scouting/opponent-scouting.module';
+import { MatchPlanModule } from './modules/match-plan/match-plan.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { OpponentScoutingModule } from './modules/opponent-scouting/opponent-sco
     TrainingModule,
     TacticalTaxonomyModule,
     OpponentScoutingModule,
+    MatchPlanModule,
   ],
 })
 export class AppModule {}
