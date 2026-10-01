@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+type RegistryTeam = { id: string; name: string; category: string; gender: string };
+
 type TaxonomyPhase = {
   id: string;
   name: string;
@@ -17,6 +19,7 @@ export default function OpponentPage() {
   const [workspace, setWorkspace] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
   const [taxonomy, setTaxonomy] = useState<TaxonomyPhase[]>([]);
+  const [registryTeams, setRegistryTeams] = useState<RegistryTeam[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingMatch, setSavingMatch] = useState(false);
@@ -25,6 +28,7 @@ export default function OpponentPage() {
   const [message, setMessage] = useState("");
   const [matchForm, setMatchForm] = useState({
     externalOpponentName: "",
+    externalOpponentTeamId: "",
     matchDate: "",
     opponentScore: "",
     externalScore: "",
@@ -68,20 +72,23 @@ export default function OpponentPage() {
 
   async function load() {
     try {
-      const [workspaceResponse, summaryResponse, taxonomyResponse] = await Promise.all([
+      const [workspaceResponse, summaryResponse, taxonomyResponse, teamsResponse] = await Promise.all([
         authFetch("/matches/" + params.id + "/opponent-scouting"),
         authFetch("/matches/" + params.id + "/opponent-scouting/summary"),
         authFetch("/tactical-taxonomy"),
+        authFetch("/teams"),
       ]);
 
       const workspaceJson = await workspaceResponse.json().catch(() => null);
       const summaryJson = await summaryResponse.json().catch(() => null);
       const taxonomyJson = await taxonomyResponse.json().catch(() => null);
+      const teamsJson = await teamsResponse.json().catch(() => null);
 
       if (!workspaceResponse.ok) throw new Error(workspaceJson?.error?.message || "Unable to load opponent scouting.");
       setWorkspace(workspaceJson?.data);
       setSummary(summaryJson?.data);
       setTaxonomy(Array.isArray(taxonomyJson?.data) ? taxonomyJson.data : []);
+      setRegistryTeams(Array.isArray(teamsJson?.data) ? teamsJson.data : []);
 
       const first = workspaceJson?.data?.matches?.[0];
       if (first && !selectedMatchId) setSelectedMatchId(first.id);
@@ -107,6 +114,7 @@ export default function OpponentPage() {
         method: "POST",
         body: JSON.stringify({
           ...matchForm,
+          externalOpponentName: matchForm.externalOpponentTeamId ? undefined : matchForm.externalOpponentName,
           opponentScore: matchForm.opponentScore === "" ? null : Number(matchForm.opponentScore),
           externalScore: matchForm.externalScore === "" ? null : Number(matchForm.externalScore),
         }),
@@ -114,7 +122,7 @@ export default function OpponentPage() {
       const json = await response.json().catch(() => null);
       if (!response.ok) throw new Error(json?.error?.message || json?.message || "Unable to add scouting match.");
       setMessage("Previous match added.");
-      setMatchForm({ externalOpponentName: "", matchDate: "", opponentScore: "", externalScore: "", opponentHome: true, videoRef: "", notes: "" });
+      setMatchForm({ externalOpponentName: "", externalOpponentTeamId: "", matchDate: "", opponentScore: "", externalScore: "", opponentHome: true, videoRef: "", notes: "" });
       await load();
       if (json?.data?.id) setSelectedMatchId(json.data.id);
     } catch (e: any) {
@@ -206,7 +214,7 @@ export default function OpponentPage() {
             <div className="section-kicker">ADD PREVIOUS MATCH</div>
             <h2>Add Opponent Match {Number(workspace?.capacity?.used || 0) + 1} / 5</h2>
             <div className="evidence-grid">
-              <label>Opponent faced<input required value={matchForm.externalOpponentName} onChange={(e) => setMatchForm({ ...matchForm, externalOpponentName: e.target.value })} placeholder="e.g. Al Riffa" /></label>
+              <label>Opponent faced<select required value={matchForm.externalOpponentTeamId} onChange={(e) => setMatchForm({ ...matchForm, externalOpponentTeamId: e.target.value, externalOpponentName: "" })}><option value="">Select registered team</option>{registryTeams.map((team) => <option key={team.id} value={team.id}>{team.name} · {team.category.replace("_"," ")} · {team.gender}</option>)}</select><small>Teams are selected from the Football Master Data registry. Create missing teams from Teams first.</small></label>
               <label>Match date<input required type="date" value={matchForm.matchDate} onChange={(e) => setMatchForm({ ...matchForm, matchDate: e.target.value })} /></label>
               <label>Opponent score<input type="number" min="0" value={matchForm.opponentScore} onChange={(e) => setMatchForm({ ...matchForm, opponentScore: e.target.value })} /></label>
               <label>Other team score<input type="number" min="0" value={matchForm.externalScore} onChange={(e) => setMatchForm({ ...matchForm, externalScore: e.target.value })} /></label>

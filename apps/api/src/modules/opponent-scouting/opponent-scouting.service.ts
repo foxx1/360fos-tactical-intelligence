@@ -8,7 +8,7 @@ export class OpponentScoutingService {
   private async getContext(userId: string, matchId: string) {
     const match = await this.prisma.match.findFirst({
       where: { id: matchId, team: { organization: { users: { some: { userId } } } } },
-      select: { id: true, opponentId: true, opponent: { select: { id: true, name: true } } },
+      select: { id: true, teamId: true, opponentId: true, team: { select: { id: true, name: true, category: true, gender: true } }, opponent: { select: { id: true, name: true, teamId: true, team: { select: { id: true, name: true, category: true, gender: true } } } } },
     });
     if (!match) throw new NotFoundException("Upcoming match not found");
     return match;
@@ -21,7 +21,7 @@ export class OpponentScoutingService {
         upcomingMatchId: matchId,
         upcomingMatch: { team: { organization: { users: { some: { userId } } } } },
       },
-      include: { opponent: true, evidence: { orderBy: { minute: "asc" } } },
+      include: { opponent: true, externalOpponentTeam: true, evidence: { orderBy: { minute: "asc" } } },
     });
     if (!row) throw new NotFoundException("Opponent scouting match not found");
     return row;
@@ -32,7 +32,7 @@ export class OpponentScoutingService {
     const matches = await this.prisma.opponentScoutingMatch.findMany({
       where: { upcomingMatchId: matchId },
       orderBy: { sequence: "asc" },
-      include: { _count: { select: { evidence: true } } },
+      include: { externalOpponentTeam: true, _count: { select: { evidence: true } } },
     });
     return {
       upcomingMatch: context,
@@ -47,8 +47,19 @@ export class OpponentScoutingService {
     if (existing >= 5) throw new BadRequestException("A maximum of 5 opponent scouting matches is supported.");
 
     const matchDate = new Date(body.matchDate);
-    if (!body.externalOpponentName || Number.isNaN(matchDate.getTime())) {
+    if ((!body.externalOpponentName && !body.externalOpponentTeamId) || Number.isNaN(matchDate.getTime())) {
       throw new BadRequestException("External opponent name and match date are required.");
+    }
+
+    let externalOpponentName = body.externalOpponentName?.trim() || "";
+    let externalOpponentTeamId: string | undefined;
+    if (body.externalOpponentTeamId) {
+      const team = await this.prisma.team.findFirst({
+        where: { id: body.externalOpponentTeamId, organization: { users: { some: { userId } } } },
+      });
+      if (!team) throw new BadRequestException("External opponent team not found in the team registry.");
+      externalOpponentTeamId = team.id;
+      externalOpponentName = team.name;
     }
 
     return this.prisma.opponentScoutingMatch.create({
@@ -56,7 +67,8 @@ export class OpponentScoutingService {
         upcomingMatchId: matchId,
         opponentId: context.opponentId,
         opponentName: context.opponent.name,
-        externalOpponentName: body.externalOpponentName,
+        externalOpponentName,
+        externalOpponentTeamId,
         matchDate,
         opponentScore: body.opponentScore == null ? undefined : Number(body.opponentScore),
         externalScore: body.externalScore == null ? undefined : Number(body.externalScore),

@@ -7,6 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TeamGender {
+  MEN
+  WOMEN
+  MIXED
+  @@map("team_gender")
+}
+
+enum TeamCategory {
+  FIRST_TEAM
+  U23
+  U21
+  U20
+  U19
+  U18
+  U17
+  U16
+  U15
+  U14
+  ACADEMY
+  OTHER
+  @@map("team_category")
+}
+
 enum MatchStatus {
   PLANNED
   IN_PROGRESS
@@ -142,13 +165,24 @@ model Team {
   id             String       @id @default(uuid())
   organizationId String @map("organization_id")
   name String @map("name")
+  shortName String? @map("short_name")
+  country String? @map("country")
+  clubName String? @map("club_name")
+  gender TeamGender @default(MEN) @map("gender")
+  category TeamCategory @default(FIRST_TEAM) @map("category")
+  aliases String[] @default([]) @map("aliases")
+  active Boolean @default(true) @map("active")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   seasons        Season[]
   matches        Match[]      @relation("OurTeamMatches")
+  competitionEntries TeamCompetition[]
+  opponents      Opponent[]   @relation("TeamOpponents")
+  externalScoutingMatches OpponentScoutingMatch[] @relation("ScoutingExternalOpponentTeam")
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
   @@index([organizationId])
+  @@index([organizationId, category, gender, active])
   @@map("teams")
 }
 
@@ -158,10 +192,28 @@ model Season {
   name String @map("name")
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   matches   Match[]
+  competitionEntries TeamCompetition[]
   createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([teamId, name])
   @@map("seasons")
+}
+
+model TeamCompetition {
+  id            String @id @default(uuid())
+  teamId        String @map("team_id")
+  competitionId String @map("competition_id")
+  seasonId      String @map("season_id")
+  team          Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  season        Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([teamId, competitionId, seasonId])
+  @@index([competitionId, seasonId])
+  @@index([teamId, seasonId])
+  @@map("team_competitions")
 }
 
 model Competition {
@@ -170,6 +222,7 @@ model Competition {
   name String @map("name")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   matches        Match[]
+  teamEntries TeamCompetition[]
   createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([organizationId, name])
@@ -181,11 +234,15 @@ model Opponent {
   organizationId String @map("organization_id")
   name String @map("name")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String?      @map("team_id")
+  team           Team?        @relation("TeamOpponents", fields: [teamId], references: [id], onDelete: SetNull)
   matches        Match[]      @relation("OpponentMatches")
   scoutingMatches OpponentScoutingMatch[]
   createdAt DateTime     @default(now()) @map("created_at")
 
   @@unique([organizationId, name])
+  @@unique([organizationId, teamId])
+  @@index([teamId])
   @@map("opponents")
 }
 
@@ -491,6 +548,8 @@ model OpponentScoutingMatch {
   opponentId           String   @map("opponent_id")
   opponentName          String   @map("opponent_name")
   externalOpponentName  String   @map("external_opponent_name")
+  externalOpponentTeamId String? @map("external_opponent_team_id")
+  externalOpponentTeam Team? @relation("ScoutingExternalOpponentTeam", fields: [externalOpponentTeamId], references: [id], onDelete: SetNull)
   matchDate             DateTime @map("match_date")
   opponentScore         Int?     @map("opponent_score")
   externalScore         Int?     @map("external_score")
