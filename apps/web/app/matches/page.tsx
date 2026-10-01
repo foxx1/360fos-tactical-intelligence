@@ -49,6 +49,7 @@ export default function MatchesPage() {
           <Link href="/">⌂ <span>Dashboard</span></Link>
           <Link className="active" href="/matches">▣ <span>Matches</span></Link>
           <Link href="/opponents">◌ <span>Opponents</span></Link>
+          <Link href="/opponent-scouting">◈ <span>Opponent Scouting</span></Link>
           <Link href="/teams">◉ <span>Teams</span></Link>
           <Link href="/players">♙ <span>Players</span></Link>
           <Link href="/tactical-intelligence">✦ <span>Tactical Intelligence</span></Link>
@@ -66,7 +67,7 @@ export default function MatchesPage() {
 
         <div className="page-heading">
           <div><div className="crumb">360FOS / MATCHES</div><h1>Matches</h1><p>Build the evidence base for every tactical decision.</p></div>
-          <Link className="primary-action" href="/matches/new">+ Create Match</Link>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}><Link className="secondary-action" href="/opponent-scouting">◈ Opponent Scouting</Link><Link className="primary-action" href="/matches/new">+ Create Match</Link></div>
         </div>
 
         {loading ? <div className="empty-state">Loading matches...</div> : matches.length === 0 ? (
