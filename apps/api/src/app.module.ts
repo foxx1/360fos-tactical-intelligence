@@ -13,6 +13,8 @@ import { OpponentsModule } from './modules/opponents/opponents.module';
 import { CompetitionsModule } from './modules/competitions/competitions.module';
 import { TacticalTaxonomyModule } from './modules/tactical-taxonomy/tactical-taxonomy.module';
 import { OpponentScoutingModule } from './modules/opponent-scouting/opponent-scouting.module';
+import { TrainingLearningLoopModule } from './modules/training-learning-loop/training-learning-loop.module';
+import { ProfessionalReportingModule } from './modules/professional-reporting/professional-reporting.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { OpponentScoutingModule } from './modules/opponent-scouting/opponent-sco
     TrainingModule,
     TacticalTaxonomyModule,
     OpponentScoutingModule,
+    TrainingLearningLoopModule,
+    ProfessionalReportingModule,
   ],
 })
 export class AppModule {}

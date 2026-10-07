@@ -14,7 +14,7 @@ type Match = {
 
 const tabs = [
   ["Overview", "overview"], ["Our Team", "our-team"], ["Opponent", "opponent"], ["Evidence", "evidence"],
-  ["Strengths & Weaknesses", "sw"], ["Intelligence Matrix", "matrix"], ["Training Priorities", "training"], ["Match Plan", "plan"]
+  ["Strengths & Weaknesses", "sw"], ["Intelligence Matrix", "matrix"], ["Training Priorities", "training"], ["Match Plan", "plan"], ["Report", "report"]
 ];
 
 export default function MatchWorkspacePage() {
@@ -54,7 +54,8 @@ export default function MatchWorkspacePage() {
             sw: "/matches/"+params.id+"/strengths-weaknesses",
             matrix: "/matches/"+params.id+"/intelligence",
             training: "/matches/"+params.id+"/training",
-            plan: "/matches/"+params.id+"/match-plan"
+            plan: "/matches/"+params.id+"/match-plan",
+            report: "/matches/"+params.id+"/report"
           };
           return <Link className={"workspace-tab-link "+(key==="overview"?"active":"")} href={routes[key]} key={key}>{label}</Link>;
         })}</div>
@@ -79,6 +80,7 @@ export default function MatchWorkspacePage() {
           <Link className="next-action" href={"/matches/"+params.id+"/opponent"}><span>◌</span><div><b>Opponent Scouting</b><small>Analyse up to five previous matches</small></div><i>→</i></Link>
           <Link className="next-action" href={"/matches/"+params.id+"/intelligence"}><span>⚠</span><div><b>Intelligence Matrix</b><small>Connect the two analyses</small></div><i>→</i></Link>
           <Link className="next-action" href={"/matches/"+params.id+"/intelligence"}><span>⚽</span><div><b>Coach Review</b><small>Convert diagnosis into practice</small></div><i>→</i></Link>
+          <Link className="next-action" href={"/matches/"+params.id+"/report"}><span>▤</span><div><b>Professional Report</b><small>Generate the decision-ready technical report</small></div><i>→</i></Link>
         </div></section>
       </section>
     </main>
